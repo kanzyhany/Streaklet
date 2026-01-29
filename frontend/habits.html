@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Habits - Streaklet</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌿</text></svg>">
+    <style>
+        .habits-page-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: var(--space-xl);
+            align-items: start;
+        }
+
+        /* Sidebar Styling */
+        .filters-sidebar {
+            background: var(--bg-white);
+            padding: var(--space-lg);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 100px;
+        }
+
+        .filter-section {
+            margin-bottom: var(--space-xl);
+        }
+
+        .filter-section h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: var(--space-md);
+            font-weight: 700;
+        }
+
+        .filter-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            cursor: pointer;
+            padding: var(--space-xs) 0;
+            transition: color var(--transition-fast);
+        }
+
+        .filter-item:hover {
+            color: var(--primary-green);
+        }
+
+        .filter-item input {
+            cursor: pointer;
+        }
+
+        .color-filter-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: var(--space-sm);
+        }
+
+        .color-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform var(--transition-fast);
+        }
+
+        .color-dot:hover {
+            transform: scale(1.2);
+        }
+
+        .color-dot.active {
+            border-color: var(--text-dark);
+            box-shadow: 0 0 0 2px white inset;
+        }
+
+        /* Main Content Styling */
+        .habits-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-lg);
+        }
+
+        .sort-control {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .habits-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: var(--space-lg);
+        }
+
+        .habit-manage-card {
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+            transition: transform var(--transition-fast);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-md);
+        }
+
+        .habit-manage-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .habit-manage-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .habit-manage-icon {
+            font-size: 1.5rem;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-md);
+        }
+
+        .habit-manage-info h3 {
+            font-size: 1.1rem;
+            margin-bottom: 2px;
+        }
+
+        .habit-manage-meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .habit-manage-footer {
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: var(--space-md);
+            border-top: 1px solid var(--border-light);
+        }
+
+        @media (max-width: 1024px) {
+            .habits-page-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .filters-sidebar {
+                position: static;
+                margin-bottom: var(--space-lg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-layout">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="navbar-container">
+                <a href="index.html" class="navbar-brand">
+                    <span class="logo-icon">🌿</span>
+                    <span>Streaklet</span>
+                </a>
+
+                <div class="navbar-nav">
+                    <a href="index.html" class="nav-link">Dashboard</a>
+                    <a href="calendar.html" class="nav-link">Calendar</a>
+                    <a href="habits.html" class="nav-link active">My Habits</a>
+                    <a href="progress.html" class="nav-link">Progress</a>
+                    <a href="settings.html" class="nav-link">Settings</a>
+                </div>
+
+                <div class="navbar-actions">
+                    <div class="notification-wrapper" id="notificationWrapper">
+                        <button class="notification-bell" id="notificationBell" onclick="toggleNotificationPanel()"
+                            title="Notifications">
+                            <span class="bell-icon">🔔</span>
+                            <span class="notification-badge hidden" id="notificationBadge">0</span>
+                        </button>
+
+                        <div class="notification-panel hidden" id="notificationPanel">
+                            <div class="notification-header">
+                                <h4>Notifications</h4>
+                                <button class="btn-link" onclick="markAllAsRead()">Mark all read</button>
+                            </div>
+                            <div class="notification-list" id="notificationList"></div>
+                        </div>
+                    </div>
+
+                    <button class="btn-menu" title="Menu" onclick="toggleMobileMenu()">
+                        <span>•••</span>
+                    </button>
+                    <div class="user-avatar">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=streaklet" alt="User avatar">
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <div class="habits-page-layout">
+                    <!-- Filters Sidebar -->
+                    <aside class="filters-sidebar">
+                        <div class="filter-section">
+                            <h3>Categories</h3>
+                            <div id="categoryFilterList" class="filter-list">
+                                <!-- Dynamic categories -->
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <h3>Colors</h3>
+                            <div id="colorFilterGrid" class="color-filter-grid">
+                                <!-- Dynamic colors -->
+                            </div>
+                        </div>
+
+                        <button class="btn btn-secondary w-full" id="clearFilters">Clear All Filters</button>
+                    </aside>
+
+                    <!-- Habits List -->
+                    <div class="habits-main">
+                        <div class="habits-header">
+                            <div class="page-greeting" style="padding: 0; margin: 0;">
+                                <h1>My Habits</h1>
+                                <p id="habitCount">Loading habits...</p>
+                            </div>
+                            <div class="sort-control">
+                                <label for="habitSort">Sort by:</label>
+                                <select id="habitSort" class="form-input" style="width: auto;">
+                                    <option value="newest">Newest First</option>
+                                    <option value="oldest">Oldest First</option>
+                                    <option value="alpha">Alphabetical</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="habitsList" class="habits-list">
+                            <!-- Habits will be injected here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js?v=7"></script>
+    <script src="js/habits.js?v=7"></script>
+</body>
+
+</html>

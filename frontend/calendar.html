@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streaklet - Calendar</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
+    <style>
+        .calendar-container {
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--border-light);
+        }
+
+        .calendar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--space-lg);
+        }
+
+        .calendar-controls {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .month-display {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            min-width: 200px;
+            text-align: center;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: var(--border-light);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        .calendar-day-header {
+            background: var(--bg-cream-dark);
+            padding: var(--space-sm);
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .calendar-day {
+            background: var(--bg-white);
+            min-height: 120px;
+            padding: var(--space-sm);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            cursor: pointer;
+            transition: background var(--transition-fast);
+            position: relative;
+        }
+
+        .calendar-day:hover {
+            background: var(--bg-cream);
+        }
+
+        .calendar-day.today {
+            background: rgba(74, 124, 89, 0.05);
+        }
+
+        .day-number {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-full);
+        }
+
+        .calendar-day.today .day-number {
+            background: var(--primary-green);
+            color: white;
+        }
+
+        .calendar-day.other-month {
+            background: var(--bg-cream);
+            color: var(--text-light);
+        }
+
+        .calendar-day.other-month .day-number {
+            color: var(--text-light);
+        }
+
+        .day-habits {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            flex: 1;
+        }
+
+        .habit-dot {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--text-dark);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .habit-dot.done {
+            background: rgba(74, 124, 89, 0.2);
+            color: var(--primary-green-dark);
+        }
+
+        .habit-dot.missed {
+            background: rgba(217, 75, 61, 0.2);
+            color: var(--accent-red);
+            text-decoration: line-through;
+        }
+
+        .habit-dot.pending {
+            background: var(--bg-cream-dark);
+            color: var(--text-muted);
+        }
+
+        .more-indicator {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: auto;
+            padding-top: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-layout">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="navbar-container">
+                <a href="index.html" class="navbar-brand">
+                    <span class="logo-icon">🌿</span>
+                    <span>Streaklet</span>
+                </a>
+
+                <div class="navbar-nav">
+                    <a href="index.html" class="nav-link">Dashboard</a>
+                    <a href="calendar.html" class="nav-link active">Calendar</a>
+                    <a href="habits.html" class="nav-link">My Habits</a>
+                    <a href="progress.html" class="nav-link">Progress</a>
+                    <a href="settings.html" class="nav-link">Settings</a>
+                </div>
+
+                <div class="navbar-actions">
+                    <!-- Notification Bell -->
+                    <div class="notification-wrapper" id="notificationWrapper">
+                        <button class="notification-bell" id="notificationBell" onclick="toggleNotificationPanel()"
+                            title="Notifications">
+                            <span class="bell-icon">🔔</span>
+                            <span class="notification-badge hidden" id="notificationBadge">0</span>
+                        </button>
+
+                        <div class="notification-panel hidden" id="notificationPanel">
+                            <div class="notification-header">
+                                <h4>Notifications</h4>
+                                <button class="btn-link" onclick="markAllAsRead()">Mark all read</button>
+                            </div>
+                            <div class="notification-list" id="notificationList"></div>
+                        </div>
+                    </div>
+
+                    <button class="btn-menu" title="Menu">
+                        <span>•••</span>
+                    </button>
+                    <div class="user-avatar">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=streaklet" alt="User avatar">
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <div class="page-greeting">
+                    <h1>Calendar</h1>
+                    <p>View your habit history and upcoming schedule</p>
+                </div>
+
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <div class="calendar-controls">
+                            <button class="btn btn-secondary btn-icon" id="prevMonth">‹</button>
+                            <div class="month-display" id="monthDisplay">January 2026</div>
+                            <button class="btn btn-secondary btn-icon" id="nextMonth">›</button>
+                        </div>
+                        <button class="btn btn-secondary" id="todayBtn">Today</button>
+                    </div>
+
+                    <div class="calendar-grid" id="calendarGrid">
+                        <!-- Headers -->
+                        <div class="calendar-day-header">Sun</div>
+                        <div class="calendar-day-header">Mon</div>
+                        <div class="calendar-day-header">Tue</div>
+                        <div class="calendar-day-header">Wed</div>
+                        <div class="calendar-day-header">Thu</div>
+                        <div class="calendar-day-header">Fri</div>
+                        <div class="calendar-day-header">Sat</div>
+
+                        <!-- Days will be populated by JS -->
+                    </div>
+
+                    <!-- Day View (Hidden by default) -->
+                    <div id="dayView" class="hidden">
+                        <div class="day-view-header">
+                            <button class="btn btn-secondary btn-icon" id="backToMonth">‹ Back</button>
+                            <h2 id="dayViewDate">Date</h2>
+                            <div style="width: 40px;"></div><!-- Spacer -->
+                        </div>
+                        <div class="day-view-content" id="dayViewContent">
+                            <!-- Habits list -->
+                        </div>
+                        <style>
+                            .day-view-header {
+                                display: flex;
+                                align-items: center;
+                                justify-content: space-between;
+                                margin-bottom: var(--space-lg);
+                                padding-bottom: var(--space-md);
+                                border-bottom: 1px solid var(--border-light);
+                            }
+
+                            .day-view-content {
+                                display: flex;
+                                flex-direction: column;
+                                gap: var(--space-md);
+                            }
+
+                            .day-habit-item {
+                                display: flex;
+                                align-items: center;
+                                justify-content: space-between;
+                                padding: var(--space-md);
+                                background: var(--bg-cream-light);
+                                border-radius: var(--radius-md);
+                                border: 1px solid var(--border-light);
+                            }
+                        </style>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js?v=6"></script>
+    <script src="js/calendar.js?v=6"></script>
+    <!-- Reuse dashboard for notification logic if needed, or extract -->
+    <script>
+        // Copy notification logic minimal or include dashboard.js?
+        // Including dashboard.js might run initDashboard() which loads dashboard widgets.
+        // Better to have shared logic. For now I'll include notification logic in calendar.js or minimal inline.
+        // Actually, dashboard.js has auth guard and init logic mixed.
+        // I should extract shared logic, but for speed I will add auth guard and notifications to calendar.js
+    </script>
+</body>
+
+</html>

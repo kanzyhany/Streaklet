@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Track your habit progress and view insights on Streaklet.">
+    <title>Progress | Streaklet</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
+</head>
+
+<body>
+    <div class="app-layout">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="navbar-container">
+                <a href="index.html" class="navbar-brand">
+                    <span class="logo-icon">🌿</span>
+                    <span>Streaklet</span>
+                </a>
+
+                <div class="navbar-nav">
+                    <a href="index.html" class="nav-link">Dashboard</a>
+                    <a href="calendar.html" class="nav-link">Calendar</a>
+                    <a href="habits.html" class="nav-link">My Habits</a>
+                    <a href="progress.html" class="nav-link active">Progress</a>
+                    <a href="settings.html" class="nav-link">Settings</a>
+                </div>
+
+                <div class="navbar-actions">
+                    <button class="btn-menu" title="Menu">
+                        <span>•••</span>
+                    </button>
+                    <div class="user-avatar">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=streaklet" alt="User avatar">
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <!-- Page Header -->
+                <div class="page-greeting">
+                    <h1>Your Progress 📈</h1>
+                    <p>See how your habits are growing.</p>
+                </div>
+
+                <!-- Progress Grid -->
+                <div class="progress-page-grid">
+                    <!-- Weekly Habit Completion Chart -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Weekly Habit Completion</h2>
+                            <div class="chart-toggle">
+                                <button class="chart-toggle-btn active" data-view="weekly">Weekly</button>
+                                <button class="chart-toggle-btn" data-view="monthly">Monthly</button>
+                            </div>
+                        </div>
+
+                        <div id="completionChart">
+                            <!-- Chart will be rendered here -->
+                            <div class="flex-center" style="padding: 60px;">
+                                <div class="loading-spinner"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Best Streaks -->
+                    <div class="card">
+                        <h2 class="card-title mb-lg">Your Best Streaks</h2>
+
+                        <div class="best-streaks-list" id="bestStreaksList">
+                            <!-- Streaks will be loaded here -->
+                            <div class="flex-center" style="padding: 40px;">
+                                <div class="loading-spinner"></div>
+                            </div>
+                        </div>
+
+                        <!-- Habit Insights -->
+                        <div class="card-title mt-lg mb-md">Habit Insights</div>
+                        <div class="insights-grid" id="insightsGrid">
+                            <!-- Insights will be loaded here -->
+                        </div>
+
+                        <a href="#" class="view-all-link">View All</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/progress.js"></script>
+</body>
+
+</html>

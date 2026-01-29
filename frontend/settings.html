@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Manage your Streaklet account settings and preferences.">
+    <title>Settings | Streaklet</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
+</head>
+
+<body>
+    <div class="app-layout">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="navbar-container">
+                <a href="index.html" class="navbar-brand">
+                    <span class="logo-icon">🌿</span>
+                    <span>Streaklet</span>
+                </a>
+
+                <div class="navbar-nav">
+                    <a href="index.html" class="nav-link">Dashboard</a>
+                    <a href="calendar.html" class="nav-link">Calendar</a>
+                    <a href="habits.html" class="nav-link">My Habits</a>
+                    <a href="progress.html" class="nav-link">Progress</a>
+                    <a href="settings.html" class="nav-link active">Settings</a>
+                </div>
+
+                <div class="navbar-actions">
+                    <button class="btn-menu" title="Menu">
+                        <span>•••</span>
+                    </button>
+                    <div class="user-avatar">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=streaklet" alt="User avatar">
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container" style="max-width: 600px;">
+                <!-- Page Header -->
+                <div class="page-greeting">
+                    <h1>Settings ⚙️</h1>
+                    <p>Manage your habit tracker.</p>
+                </div>
+
+                <!-- Settings Card -->
+                <div class="card">
+                    <!-- General Settings -->
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">General</h3>
+
+                        <form id="generalSettingsForm">
+                            <div class="form-group">
+                                <label class="form-label" for="userName">Name</label>
+                                <input type="text" id="userName" class="form-input" placeholder="Your name">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="userEmail">Email Address</label>
+                                <input type="email" id="userEmail" class="form-input" placeholder="you@example.com"
+                                    disabled>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="userTimezone">Time Zone</label>
+                                <select id="userTimezone" class="form-input form-select">
+                                    <option value="UTC">UTC (GMT +0:00)</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </form>
+                    </div>
+
+                    <!-- Notifications -->
+                    <div class="settings-section mt-xl">
+                        <h3 class="settings-section-title">Notifications</h3>
+
+                        <div class="toggle-group">
+                            <div class="toggle-info">
+                                <div class="toggle-icon">🔔</div>
+                                <div class="toggle-text">
+                                    <h4>Habit Reminders</h4>
+                                    <p>Receive daily reminders for your habits</p>
+                                </div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="habitReminders" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-group">
+                            <div class="toggle-info">
+                                <div class="toggle-icon">📧</div>
+                                <div class="toggle-text">
+                                    <h4>General Emails</h4>
+                                    <p>Receive email updates and tips</p>
+                                </div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="generalEmails" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-group" style="border-bottom: none;">
+                            <div class="toggle-info">
+                                <div class="toggle-icon">🌙</div>
+                                <div class="toggle-text">
+                                    <h4>Dark Mode</h4>
+                                    <p>Enable dark theme</p>
+                                </div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="darkMode">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Account Actions -->
+                    <div class="settings-actions">
+                        <button class="btn btn-secondary" id="manageAccountBtn">Manage Account</button>
+                        <button class="btn btn-danger" id="logoutBtn">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/settings.js"></script>
+</body>
+
+</html>
