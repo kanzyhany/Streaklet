@@ -173,10 +173,10 @@ async function markAllAsRead() {
     }
 }
 
-// Global initialization if we're not on dashboard (dashboard calls it explicitly)
+// Global initialization
 document.addEventListener('DOMContentLoaded', () => {
     const bell = document.getElementById('notificationBell');
-    if (bell && !window.location.pathname.includes('index.html') && window.location.pathname !== '/') {
+    if (bell) {
         initNotifications();
     }
 });

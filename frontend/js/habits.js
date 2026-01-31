@@ -236,6 +236,9 @@ function renderHabits() {
                         ${habit.active ? 'Active' : 'Paused'}
                     </span>
                     <div class="habit-actions" style="display: flex; gap: 8px;">
+                         <button class="btn-icon" onclick="window.location.href='notes.html?habitId=${habit._id}'" title="View Notes" style="background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 1.1rem;">
+                            <i class="fas fa-sticky-note"></i>
+                         </button>
                          ${habit.canEdit ? `
                          <button class="btn-icon" onclick="openEditHabitModal('${habit._id}')" title="Edit Habit" style="background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 1.1rem;">
                             <i class="fas fa-pencil-alt"></i>
@@ -312,6 +315,16 @@ async function openEditHabitModal(habitId) {
 function closeHabitModal() {
     document.getElementById('habitModal').classList.remove('show');
 }
+
+
+
+// Utility to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 
 async function handleSaveHabit(e) {
     e.preventDefault();
