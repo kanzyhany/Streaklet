@@ -179,10 +179,8 @@ function attachHabitListeners() {
             // Ignore clicks inside the menu
             if (e.target.closest('.habit-menu')) return;
 
-            // Quick toggle: pending/in_progress -> done
-            if (currentStatus === 'pending' || currentStatus === 'in_progress') {
-                updateHabitStatus(habitId, 'done');
-            }
+            // REMOVED: Quick toggle on card click
+            // Users must now use the menu to mark as done
         });
     });
 }
@@ -234,9 +232,6 @@ function showHabitMenu(habitId, cardElement) {
     </button>
     <button class="menu-item" onclick="updateHabitStatus('${habitId}', 'skipped')">
       ⏭ Skip Today
-    </button>
-    <button class="menu-item" onclick="updateHabitStatus('${habitId}', 'missed')">
-      ✗ Mark Missed
     </button>
     <hr style="margin: 8px 0; border: none; border-top: 1px solid #e2e8f0;">
     <button class="menu-item" onclick="editHabit('${habitId}')">
@@ -293,6 +288,17 @@ async function loadStreakStats() {
         if (streakResponse.success) {
             currentStreakEl.querySelector('h3').textContent = `${streakResponse.data.currentStreak} Days`;
             longestStreakEl.querySelector('h3').textContent = `${streakResponse.data.longestStreak} Days`;
+
+            // Update habit names
+            const currentHabitEl = document.getElementById('currentStreakHabit');
+            const longestHabitEl = document.getElementById('longestStreakHabit');
+
+            if (currentHabitEl) {
+                currentHabitEl.textContent = streakResponse.data.currentStreakHabit || '';
+            }
+            if (longestHabitEl) {
+                longestHabitEl.textContent = streakResponse.data.longestStreakHabit || '';
+            }
         }
 
         if (todayResponse.success && todayResponse.data.missedHabits > 0) {
@@ -619,144 +625,9 @@ function setupEventListeners() {
 // Notifications
 // ═══════════════════════════════════════════════════════════════
 
-let notificationPollInterval;
+// Notification functions moved to notifications.js
 
-async function initNotifications() {
-    // Initial load
-    await loadNotificationCount();
 
-    // Check for new notifications every minute
-    if (notificationPollInterval) clearInterval(notificationPollInterval);
-    notificationPollInterval = setInterval(loadNotificationCount, 60000);
-
-    // Attempt to generate notifications for today if needed
-    try {
-        await api.generateNotifications();
-    } catch (e) {
-        // Silent fail
-    }
-}
-
-async function loadNotificationCount() {
-    try {
-        const response = await api.getNotificationCount();
-        if (response.success) {
-            updateNotificationBadge(response.data.count);
-        }
-    } catch (error) {
-        console.error('Error loading notification count:', error);
-    }
-}
-
-function updateNotificationBadge(count) {
-    const badge = document.getElementById('notificationBadge');
-    if (badge) {
-        badge.textContent = count;
-        if (count > 0) {
-            badge.classList.remove('hidden');
-        } else {
-            badge.classList.add('hidden');
-        }
-    }
-}
-
-async function toggleNotificationPanel() {
-    const panel = document.getElementById('notificationPanel');
-    const isHidden = panel.classList.contains('hidden');
-
-    if (isHidden) {
-        // Show panel
-        panel.classList.remove('hidden');
-        loadNotifications();
-
-        // Close on click outside
-        setTimeout(() => {
-            document.addEventListener('click', function closePanel(e) {
-                if (!panel.contains(e.target) && !e.target.closest('#notificationBell')) {
-                    panel.classList.add('hidden');
-                    document.removeEventListener('click', closePanel);
-                }
-            });
-        }, 0);
-    } else {
-        panel.classList.add('hidden');
-    }
-}
-
-async function loadNotifications() {
-    const list = document.getElementById('notificationList');
-
-    try {
-        // Show loading state if empty
-        if (!list.children.length) {
-            list.innerHTML = '<div class="flex-center" style="padding: 20px;"><div class="loading-spinner"></div></div>';
-        }
-
-        const response = await api.getNotifications();
-
-        if (response.success) {
-            updateNotificationBadge(response.unreadCount);
-
-            if (response.data.length > 0) {
-                list.innerHTML = response.data.map(renderNotificationItem).join('');
-
-                // Add click listeners to mark as read
-                document.querySelectorAll('.notification-item').forEach(item => {
-                    item.addEventListener('click', () => markNotificationRead(item.dataset.id));
-                });
-            } else {
-                list.innerHTML = `
-            <div class="notification-empty">
-              <span>🔔</span>
-              <p>No notifications yet</p>
-            </div>
-          `;
-            }
-        }
-    } catch (error) {
-        console.error('Error loading notifications:', error);
-        list.innerHTML = '<div class="text-center" style="padding: 20px; color: var(--text-muted);">Failed to load notifications</div>';
-    }
-}
-
-function renderNotificationItem(notification) {
-    const time = new Date(notification.scheduledFor).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const isUnread = !notification.read;
-
-    return `
-    <div class="notification-item ${isUnread ? 'unread' : ''}" data-id="${notification._id}">
-      <div class="notification-icon">
-        ${notification.icon}
-      </div>
-      <div class="notification-content">
-        <div class="notification-title">${notification.title}</div>
-        <div class="notification-message">${notification.message}</div>
-        <div class="notification-time">${time}</div>
-      </div>
-    </div>
-  `;
-}
-
-async function markNotificationRead(id) {
-    try {
-        await api.markNotificationAsRead(id);
-        // Refresh list to update UI state
-        loadNotifications();
-        loadNotificationCount();
-    } catch (error) {
-        console.error('Error marking notification read:', error);
-    }
-}
-
-async function markAllAsRead() {
-    try {
-        await api.markAllNotificationsAsRead();
-        loadNotifications();
-        loadNotificationCount();
-    } catch (error) {
-        console.error('Error marking all read:', error);
-    }
-}
 
 // ═══════════════════════════════════════════════════════════════
 // Grace Day Functions

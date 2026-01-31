@@ -48,8 +48,10 @@ const logHabit = async (req, res) => {
                     m.user && m.user.toString() === req.user._id.toString()
                 );
 
-                // Enable logging for Owner or Members with 'edit' role
-                if (isOwner || (member && member.role === 'edit')) {
+                // Enable logging for Owner or ANY Member
+                const isMember = member && member.user;
+
+                if (isOwner || isMember) {
                     isAuthorized = true;
                 }
             }

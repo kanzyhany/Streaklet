@@ -30,6 +30,23 @@
                 </div>
 
                 <div class="navbar-actions">
+                    <!-- Notification Bell -->
+                    <div class="notification-wrapper" id="notificationWrapper">
+                        <button class="notification-bell" id="notificationBell" onclick="toggleNotificationPanel()"
+                            title="Notifications">
+                            <span class="bell-icon">🔔</span>
+                            <span class="notification-badge hidden" id="notificationBadge">0</span>
+                        </button>
+
+                        <div class="notification-panel hidden" id="notificationPanel">
+                            <div class="notification-header">
+                                <h4>Notifications</h4>
+                                <button class="btn-link" onclick="markAllAsRead()">Mark all read</button>
+                            </div>
+                            <div class="notification-list" id="notificationList"></div>
+                        </div>
+                    </div>
+
                     <div class="navbar-dropdown">
                         <button class="btn-menu" title="Menu" onclick="toggleMobileMenu()">
                             <span>•••</span>
@@ -147,6 +164,7 @@
 
     <!-- Scripts -->
     <script src="js/api.js"></script>
+    <script src="js/notifications.js"></script>
     <script src="js/settings.js"></script>
 </body>
 

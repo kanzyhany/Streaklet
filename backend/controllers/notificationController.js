@@ -130,14 +130,31 @@ const generateTodayNotifications = async (req, res) => {
         const endOfDay = new Date(today);
         endOfDay.setHours(23, 59, 59, 999);
 
+        // Fetch shared calendars user is a member of
+        const SharedCalendar = require('../models/SharedCalendar');
+        const sharedCalendars = await SharedCalendar.find({
+            'members.user': req.user._id
+        });
+        const sharedCalendarIds = sharedCalendars.map(c => c._id);
+
         const habits = await Habit.find({
-            userId: req.user._id,
             active: true,
             $or: [
-                { frequencyType: 'weekly', frequency: todayName },
-                { frequencyType: { $exists: false }, frequency: todayName },
-                { frequencyType: 'yearly', yearlyMonth: todayMonth, yearlyDay: todayDay },
-                { frequencyType: 'one-time', specificDate: { $gte: startOfDay, $lte: endOfDay } }
+                // 1. Personal habits
+                { userId: req.user._id },
+                // 2. Shared habits where user is a member
+                { sharedCalendarId: { $in: sharedCalendarIds } }
+            ],
+            // AND match today's day/date
+            $and: [
+                {
+                    $or: [
+                        { frequencyType: 'weekly', frequency: todayName },
+                        { frequencyType: { $exists: false }, frequency: todayName },
+                        { frequencyType: 'yearly', yearlyMonth: todayMonth, yearlyDay: todayDay },
+                        { frequencyType: 'one-time', specificDate: { $gte: startOfDay, $lte: endOfDay } }
+                    ]
+                }
             ]
         });
 
@@ -148,26 +165,40 @@ const generateTodayNotifications = async (req, res) => {
             const scheduledFor = new Date(today);
             scheduledFor.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-            // Check if notification already exists for this habit today
-            const existing = await Notification.findOne({
-                userId: req.user._id,
-                habitId: habit._id,
-                scheduledFor: {
-                    $gte: new Date(todayDate),
-                    $lt: new Date(new Date(todayDate).getTime() + 24 * 60 * 60 * 1000)
-                }
-            });
+            // Atomic upsert to prevent duplicates
+            // We use findOneAndUpdate with upsert: true
+            // The query ensures we only have one reminder per habit per day for this user
+            const startOfToday = new Date(todayDate);
+            const endOfToday = new Date(new Date(todayDate).getTime() + 24 * 60 * 60 * 1000);
 
-            if (!existing) {
-                await Notification.create({
+            const result = await Notification.findOneAndUpdate(
+                {
                     userId: req.user._id,
                     habitId: habit._id,
-                    title: `Time for: ${habit.title}`,
-                    message: `It's ${habit.reminderTime} - time to complete your ${habit.category.toLowerCase()} habit!`,
                     type: 'reminder',
-                    icon: habit.icon || '🔔',
-                    scheduledFor
-                });
+                    scheduledFor: {
+                        $gte: startOfToday,
+                        $lt: endOfToday
+                    }
+                },
+                {
+                    $setOnInsert: {
+                        userId: req.user._id,
+                        habitId: habit._id,
+                        title: `Time for: ${habit.title}`,
+                        message: `It's ${habit.reminderTime} - time to complete your ${habit.category.toLowerCase()} habit!`,
+                        type: 'reminder',
+                        icon: habit.icon || '🔔',
+                        scheduledFor,
+                        read: false,
+                        createdAt: new Date()
+                    }
+                },
+                { upsert: true, new: true, rawResult: true }
+            );
+
+            // Check if a new document was inserted
+            if (result.lastErrorObject && result.lastErrorObject.updatedExisting === false) {
                 created++;
             }
         }

@@ -1,37 +1,62 @@
 const Habit = require('../models/Habit');
 const HabitLog = require('../models/HabitLog');
 const Streak = require('../models/Streak');
+const SharedCalendar = require('../models/SharedCalendar');
 
 // @desc    Get today's progress
 // @route   GET /api/stats/today
 // @access  Private
 const getTodayStats = async (req, res) => {
     try {
-        const today = new Date();
-        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        const todayName = dayNames[today.getDay()];
-        const todayDate = today.toISOString().split('T')[0];
-        const todayMonth = today.getMonth() + 1; // 1-12
-        const todayDay = today.getDate(); // 1-31
+        const [hours, minutes, day, month, year, weekday] = new Intl.DateTimeFormat('en-US', {
+            timeZone: req.user.timezone || 'UTC',
+            hour: 'numeric',
+            minute: 'numeric',
+            day: 'numeric',
+            month: 'numeric',
+            year: 'numeric',
+            weekday: 'short'
+        }).formatToParts(new Date()).reduce((acc, part) => {
+            if (part.type !== 'literal') acc.push(part.value);
+            return acc;
+        }, []);
 
-        // Get weekly habits scheduled for today + yearly habits that match today's date + one-time habits for today
-        const startOfDay = new Date(today);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(today);
-        endOfDay.setHours(23, 59, 59, 999);
+        const todayName = weekday;
+        const todayMonth = parseInt(month);
+        const todayDay = parseInt(day);
+        const todayYear = parseInt(year);
+        const todayDate = `${todayYear}-${todayMonth.toString().padStart(2, '0')}-${todayDay.toString().padStart(2, '0')}`;
+
+        const startOfDay = new Date(Date.UTC(todayYear, todayMonth - 1, todayDay, 0, 0, 0, 0));
+        const endOfDay = new Date(Date.UTC(todayYear, todayMonth - 1, todayDay, 23, 59, 59, 999));
+
+        // Fetch shared calendars
+        const mySharedCalendars = await SharedCalendar.find({
+            'members.user': req.user._id
+        });
+        const mySharedCalendarIds = mySharedCalendars.map(c => c._id);
 
         const habits = await Habit.find({
-            userId: req.user._id,
             active: true,
-            $or: [
-                { frequencyType: 'weekly', frequency: todayName },
-                { frequencyType: { $exists: false }, frequency: todayName }, // Legacy habits without frequencyType
-                { frequencyType: 'yearly', yearlyMonth: todayMonth, yearlyDay: todayDay },
-                { frequencyType: 'one-time', specificDate: { $gte: startOfDay, $lte: endOfDay } }
+            $and: [
+                {
+                    $or: [
+                        { userId: req.user._id, sharedCalendarId: null },
+                        { sharedCalendarId: { $in: mySharedCalendarIds } }
+                    ]
+                },
+                {
+                    $or: [
+                        { frequencyType: 'weekly', frequency: todayName },
+                        { frequencyType: { $exists: false }, frequency: todayName },
+                        { frequencyType: 'yearly', yearlyMonth: todayMonth, yearlyDay: todayDay },
+                        { frequencyType: 'one-time', specificDate: { $gte: startOfDay, $lte: endOfDay } }
+                    ]
+                }
             ]
         });
 
-        // Get today's logs
+        // Get today's logs for this user
         const logs = await HabitLog.find({
             userId: req.user._id,
             date: todayDate
@@ -41,7 +66,9 @@ const getTodayStats = async (req, res) => {
         const completedHabits = logs.filter(log => log.status === 'done').length;
         const missedHabits = logs.filter(log => log.status === 'missed').length;
         const inProgressHabits = logs.filter(log => log.status === 'in_progress').length;
-        const pendingHabits = totalHabits - logs.length;
+
+        // Fix pending calculation: total - (anything that has a log today)
+        const pendingHabits = totalHabits - habits.filter(h => logs.some(l => l.habitId.toString() === h._id.toString())).length;
 
         const completionPercentage = totalHabits > 0
             ? Math.round((completedHabits / totalHabits) * 100)
@@ -76,6 +103,7 @@ const getWeeklyStats = async (req, res) => {
         const today = new Date();
         const weekStart = new Date(today);
         weekStart.setDate(today.getDate() - today.getDay()); // Start from Sunday
+        weekStart.setHours(0, 0, 0, 0);
 
         const days = [];
         for (let i = 0; i < 7; i++) {
@@ -84,35 +112,55 @@ const getWeeklyStats = async (req, res) => {
             days.push(date.toISOString().split('T')[0]);
         }
 
+        // Fetch shared calendars
+        const mySharedCalendars = await SharedCalendar.find({
+            'members.user': req.user._id
+        });
+        const mySharedCalendarIds = mySharedCalendars.map(c => c._id);
+
         // Get all logs for the week
         const logs = await HabitLog.find({
             userId: req.user._id,
             date: { $in: days }
         });
 
-        // Get active habits count
+        // Get active habits (personal + shared)
         const habits = await Habit.find({
-            userId: req.user._id,
-            active: true
+            active: true,
+            $or: [
+                { userId: req.user._id, sharedCalendarId: null },
+                { sharedCalendarId: { $in: mySharedCalendarIds } }
+            ]
         });
 
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
         // Calculate daily stats
-        const dailyStats = days.map((date, index) => {
-            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const dailyStats = days.map((dateStr, index) => {
             const dayName = dayNames[index];
+            const currentDate = new Date(dateStr);
+            const currentMonth = currentDate.getMonth() + 1;
+            const currentDay = currentDate.getDate();
 
-            // Get habits for this day
-            const habitsForDay = habits.filter(h => h.frequency.includes(dayName));
-            const dayLogs = logs.filter(log => log.date === date);
+            // Filter habits for THIS specific day
+            const habitsForDay = habits.filter(h => {
+                if (h.frequencyType === 'weekly' || !h.frequencyType) {
+                    return h.frequency.includes(dayName);
+                }
+                if (h.frequencyType === 'yearly') {
+                    return h.yearlyMonth === currentMonth && h.yearlyDay === currentDay;
+                }
+                if (h.frequencyType === 'one-time') {
+                    const habitDate = new Date(h.specificDate).toISOString().split('T')[0];
+                    return habitDate === dateStr;
+                }
+                return false;
+            });
 
+            const dayLogs = logs.filter(log => log.date === dateStr);
             const completedCount = dayLogs.filter(log => log.status === 'done').length;
             const skippedCount = dayLogs.filter(log => log.status === 'skipped').length;
             const totalForDay = habitsForDay.length;
-
-            // Calculate missed: 
-            // For past days: Total - (Done + Skipped)
-            // For today: Only count explicit 'missed' status (since day isn't over)
-            let missedCount = 0;
 
             const userTimezone = req.user.timezone || 'UTC';
             const now = new Date();
@@ -127,8 +175,9 @@ const getWeeklyStats = async (req, res) => {
             parts.forEach(p => dateParts[p.type] = p.value);
             const todayStr = `${dateParts.year}-${dateParts.month.toString().padStart(2, '0')}-${dateParts.day.toString().padStart(2, '0')}`;
 
-            const isPast = date < todayStr;
+            const isPast = dateStr < todayStr;
 
+            let missedCount = 0;
             if (isPast) {
                 missedCount = Math.max(0, totalForDay - completedCount - skippedCount);
             } else {
@@ -136,7 +185,7 @@ const getWeeklyStats = async (req, res) => {
             }
 
             return {
-                date,
+                date: dateStr,
                 day: dayName,
                 completed: completedCount,
                 missed: missedCount,
@@ -220,13 +269,34 @@ const getStreakStats = async (req, res) => {
         const streaks = await Streak.find({ userId: req.user._id })
             .populate('habitId', 'title category icon color');
 
-        // Find max current streak
-        const maxCurrentStreak = streaks.reduce((max, s) =>
-            s.currentStreak > max ? s.currentStreak : max, 0);
+        // Find max current streak and its habit(s)
+        let maxCurrentStreak = 0;
+        let currentStreakHabits = [];
 
-        // Find max longest streak
-        const maxLongestStreak = streaks.reduce((max, s) =>
-            s.longestStreak > max ? s.longestStreak : max, 0);
+        streaks.forEach(s => {
+            if (s.currentStreak > maxCurrentStreak) {
+                maxCurrentStreak = s.currentStreak;
+                currentStreakHabits = [s.habitId ? s.habitId.title : ''];
+            } else if (s.currentStreak === maxCurrentStreak && maxCurrentStreak > 0) {
+                if (s.habitId) currentStreakHabits.push(s.habitId.title);
+            }
+        });
+
+        // Find max longest streak and its habit(s)
+        let maxLongestStreak = 0;
+        let longestStreakHabits = [];
+
+        streaks.forEach(s => {
+            if (s.longestStreak > maxLongestStreak) {
+                maxLongestStreak = s.longestStreak;
+                longestStreakHabits = [s.habitId ? s.habitId.title : ''];
+            } else if (s.longestStreak === maxLongestStreak && maxLongestStreak > 0) {
+                if (s.habitId) longestStreakHabits.push(s.habitId.title);
+            }
+        });
+
+        const maxCurrentStreakHabit = currentStreakHabits.join(' & ');
+        const maxLongestStreakHabit = longestStreakHabits.join(' & ');
 
         // Get best streaking habits
         const bestStreaks = streaks
@@ -247,7 +317,9 @@ const getStreakStats = async (req, res) => {
             success: true,
             data: {
                 currentStreak: maxCurrentStreak,
+                currentStreakHabit: maxCurrentStreakHabit,
                 longestStreak: maxLongestStreak,
+                longestStreakHabit: maxLongestStreakHabit,
                 bestStreaks
             }
         });
