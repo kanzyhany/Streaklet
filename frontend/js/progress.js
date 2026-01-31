@@ -24,6 +24,9 @@ async function initProgressPage() {
 
   // Setup event listeners
   setupProgressListeners();
+
+  // Load chat history
+  loadChatHistory();
 }
 
 function loadUserInfo() {
@@ -268,6 +271,50 @@ function escapeHtml(text) {
 // ═══════════════════════════════════════════════════════════════
 
 let isAILoading = false;
+const CHAT_HISTORY_KEY = 'streaklet_chat_history';
+
+function loadChatHistory() {
+  const history = localStorage.getItem(CHAT_HISTORY_KEY);
+  if (history) {
+    try {
+      const messages = JSON.parse(history);
+      const chatHistoryEl = document.getElementById('chatHistory');
+
+      // Clear welcome message if history exists and we're about to add messages
+      if (messages.length > 0) {
+        const welcomeMsg = chatHistoryEl.querySelector('.chat-welcome');
+        if (welcomeMsg) welcomeMsg.remove();
+      }
+
+      messages.forEach(msg => {
+        addChatMessage(msg.text, msg.sender, false, false); // isLoading=false, save=false
+      });
+    } catch (e) {
+      console.error('Failed to parse chat history', e);
+    }
+  }
+}
+
+function saveChatHistory(text, sender) {
+  try {
+    const history = localStorage.getItem(CHAT_HISTORY_KEY);
+    let messages = history ? JSON.parse(history) : [];
+
+    messages.push({
+      text,
+      sender,
+      timestamp: Date.now()
+    });
+
+    // Limit history to last 50 messages
+    if (messages.length > 50) messages = messages.slice(-50);
+
+    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
+  } catch (e) {
+    console.error('Failed to save chat history', e);
+  }
+}
+
 
 async function sendAIQuestion() {
   const input = document.getElementById('chatInput');
@@ -287,7 +334,7 @@ async function sendAIQuestion() {
   sendBtn.disabled = true;
   sendBtn.innerHTML = '<span class="loading-dots">...</span>';
 
-  const loadingId = addChatMessage('Thinking...', 'ai', true);
+  const loadingId = addChatMessage('Thinking...', 'ai', true, false); // Don't save loading message
 
   try {
     const response = await api.askAI(query);
@@ -321,7 +368,7 @@ function askQuickPrompt(prompt) {
   sendAIQuestion();
 }
 
-function addChatMessage(text, sender, isLoading = false) {
+function addChatMessage(text, sender, isLoading = false, save = true) {
   const chatHistory = document.getElementById('chatHistory');
   const welcomeMsg = chatHistory.querySelector('.chat-welcome');
   if (welcomeMsg) welcomeMsg.remove();
@@ -341,6 +388,10 @@ function addChatMessage(text, sender, isLoading = false) {
 
   chatHistory.appendChild(bubble);
   chatHistory.scrollTop = chatHistory.scrollHeight;
+
+  if (save && !isLoading) {
+    saveChatHistory(text, sender);
+  }
 
   return messageId;
 }
