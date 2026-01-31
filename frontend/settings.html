@@ -30,9 +30,19 @@
                 </div>
 
                 <div class="navbar-actions">
-                    <button class="btn-menu" title="Menu">
-                        <span>•••</span>
-                    </button>
+                    <div class="navbar-dropdown">
+                        <button class="btn-menu" title="Menu" onclick="toggleMobileMenu()">
+                            <span>•••</span>
+                        </button>
+                        <div class="dropdown-menu" id="navbarDropdownMenu">
+                            <a href="settings.html" class="dropdown-item">
+                                <span>⚙️</span> Settings
+                            </a>
+                            <button class="dropdown-item logout" onclick="api.logout()">
+                                <span>🚪</span> Logout
+                            </button>
+                        </div>
+                    </div>
                     <div class="user-avatar">
                         <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=streaklet" alt="User avatar">
                     </div>

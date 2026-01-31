@@ -25,11 +25,10 @@ async function initDashboard() {
     await Promise.all([
         loadTodaysHabits(),
         loadStreakStats(),
-        loadTodayProgress(),
-        loadTodaysHabits(),
-        loadStreakStats(),
+        loadGraceStatus(),
         loadTodayProgress(),
         loadWeeklyOverview(),
+        loadCalendars(),
         initNotifications()
     ]);
 
@@ -77,7 +76,8 @@ async function loadTodaysHabits() {
         const response = await api.getTodaysHabits();
 
         if (response.success && response.data.length > 0) {
-            container.innerHTML = response.data.map(habit => createHabitCard(habit)).join('');
+            const sharedCompletions = response.sharedCompletions || {};
+            container.innerHTML = response.data.map(habit => createHabitCard(habit, sharedCompletions)).join('');
             attachHabitListeners();
         } else {
             container.innerHTML = `
@@ -102,7 +102,7 @@ async function loadTodaysHabits() {
     }
 }
 
-function createHabitCard(habit) {
+function createHabitCard(habit, completions = {}) {
     const status = habit.todayStatus || 'pending';
     const statusBadge = getStatusBadge(status, habit.reminderTime);
     const categoryClass = habit.category.toLowerCase();
@@ -115,6 +115,18 @@ function createHabitCard(habit) {
       <div class="habit-info">
         <div class="habit-title">${escapeHtml(habit.title)}</div>
         <div class="habit-category">${habit.category}</div>
+        ${(() => {
+            const others = completions[habit._id] || [];
+            if (others && others.length > 0) {
+                const namesText = others.length > 3
+                    ? others.slice(0, 3).join(', ') + ` and ${others.length - 3} more`
+                    : others.join(', ');
+                return `<div class="shared-completions" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; font-style: italic;">
+                    <span title="${others.join(', ')}">✅ Done: ${namesText}</span>
+                </div>`;
+            }
+            return '';
+        })()}
       </div>
       <div class="habit-status">
         ${statusBadge}
@@ -135,7 +147,7 @@ function getStatusBadge(status, reminderTime) {
         case 'missed':
             return '<span class="status-badge missed">Missed ›</span>';
         case 'skipped':
-            return '<span class="status-badge pending">Skipped</span>';
+            return '<span class="status-badge skipped">Skipped</span>';
         case 'pending':
         default:
             const now = new Date();
@@ -163,6 +175,9 @@ function attachHabitListeners() {
                 showHabitMenu(habitId, card);
                 return;
             }
+
+            // Ignore clicks inside the menu
+            if (e.target.closest('.habit-menu')) return;
 
             // Quick toggle: pending/in_progress -> done
             if (currentStatus === 'pending' || currentStatus === 'in_progress') {
@@ -395,6 +410,29 @@ function openCreateHabitModal() {
 
         // Reset all checkboxes to checked
         document.querySelectorAll('input[name="frequency"]').forEach(cb => cb.checked = true);
+
+        // Reset calendar selection to personal
+        const calendarSelect = document.getElementById('habitCalendar');
+        if (calendarSelect) calendarSelect.value = 'personal';
+    }
+}
+
+async function loadCalendars() {
+    const calendarSelect = document.getElementById('habitCalendar');
+    if (!calendarSelect) return;
+
+    try {
+        const response = await api.getSharedCalendars();
+        if (response.success && response.data.length > 0) {
+            // Keep personal option and add shared calendars
+            const personalOption = '<option value="personal">👤 My Calendar (Personal)</option>';
+            const sharedOptions = response.data.map(cal =>
+                `<option value="${cal._id}">📅 ${cal.name}</option>`
+            ).join('');
+            calendarSelect.innerHTML = personalOption + sharedOptions;
+        }
+    } catch (error) {
+        console.error('Error loading calendars:', error);
     }
 }
 
@@ -429,6 +467,14 @@ async function saveHabit(e) {
         habitData.specificDate = document.getElementById('specificDate').value;
     } else {
         habitData.frequency = getSelectedFrequency();
+    }
+
+    // Set sharedCalendarId
+    const calendarId = document.getElementById('habitCalendar').value;
+    if (calendarId && calendarId !== 'personal') {
+        habitData.sharedCalendarId = calendarId;
+    } else {
+        habitData.sharedCalendarId = null;
     }
 
     try {
@@ -709,6 +755,34 @@ async function markAllAsRead() {
         loadNotificationCount();
     } catch (error) {
         console.error('Error marking all read:', error);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Grace Day Functions
+// ═══════════════════════════════════════════════════════════════
+
+async function loadGraceStatus() {
+    try {
+        const res = await api.getGraceStatus();
+        if (res.success) {
+            updateGraceDisplay(res.data);
+        }
+    } catch (error) {
+        console.error('Error loading grace status:', error);
+    }
+}
+
+function updateGraceDisplay(data) {
+    const dashboardIndicator = document.getElementById('dashboardGraceActive');
+    if (dashboardIndicator) {
+        // Show if personal grace day is active (or any shared one if we want to be broad, 
+        // but personal makes more sense for the main streak card)
+        if (data.personal && data.personal.activeToday) {
+            dashboardIndicator.classList.remove('hidden');
+        } else {
+            dashboardIndicator.classList.add('hidden');
+        }
     }
 }
 

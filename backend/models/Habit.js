@@ -58,6 +58,11 @@ const habitSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    sharedCalendarId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'SharedCalendar',
+        default: null
+    },
     createdAt: {
         type: Date,
         default: Date.now

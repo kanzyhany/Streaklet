@@ -238,6 +238,56 @@ img {
   color: var(--text-dark);
 }
 
+/* Navbar Dropdown */
+.navbar-dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  min-width: 160px;
+  z-index: 1000;
+  display: none;
+  overflow: hidden;
+}
+
+.dropdown-menu.show {
+  display: block;
+}
+
+.dropdown-item {
+  padding: var(--space-sm) var(--space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--text-secondary);
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  width: 100%;
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background: var(--bg-cream);
+  color: var(--primary-green);
+}
+
+.dropdown-item.logout {
+  color: var(--danger);
+  border-top: 1px solid var(--border-light);
+}
+
+.dropdown-item.logout:hover {
+  background: #fff5f5;
+  color: #d94b3d;
+}
+
 .user-avatar {
   width: 40px;
   height: 40px;
@@ -433,6 +483,12 @@ img {
   color: white;
 }
 
+.status-badge.skipped {
+  background: var(--bg-cream-dark);
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
 .status-badge.pending {
   background: var(--bg-cream-dark);
   color: var(--text-secondary);
@@ -625,21 +681,15 @@ img {
 }
 
 /* Weekly Overview Chart */
-.weekly-chart {
-  padding: var(--space-md);
-}
-
-.chart-header {
-  text-align: center;
-  margin-bottom: var(--space-md);
-}
-
 .chart-bars {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  height: 120px;
-  padding: 0 var(--space-sm);
+  height: 280px;
+  /* Increased to accommodate all elements */
+  padding: var(--space-xl) 0;
+  margin-top: var(--space-xl);
+  /* Force space between header and chart */
 }
 
 .chart-bar {
@@ -648,39 +698,103 @@ img {
   align-items: center;
   gap: var(--space-xs);
   flex: 1;
+  position: relative;
+  /* Anchor for potential absolute kids, though we use flex */
+}
+
+.bar-percentage {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+  text-align: center;
+}
+
+.bar-fill-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 180px;
+  /* Increased */
+  width: 100%;
+  align-items: center;
 }
 
 .bar-fill {
-  width: 28px;
-  background: var(--primary-green);
+  width: 36px;
+  /* Slightly wider */
+  background: linear-gradient(180deg, var(--primary-green) 0%, var(--primary-green-light) 100%);
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   transition: height var(--transition-slow);
   min-height: 8px;
 }
 
 .bar-label {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   font-weight: 500;
+  margin-top: var(--space-sm);
 }
 
 .bar-check {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  height: 16px;
-}
-
-.chart-footer {
-  text-align: center;
-  margin-top: var(--space-md);
-  padding-top: var(--space-md);
-  border-top: 1px solid var(--border-light);
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
-.chart-footer strong {
+  font-size: 1rem;
   color: var(--primary-green);
+  height: 24px;
+  margin-top: 4px;
+}
+
+/* Monthly Summary */
+.monthly-summary {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2xl);
+  padding: var(--space-2xl) 0;
+}
+
+.stat-box {
+  text-align: center;
+}
+
+.stat-value {
+  display: block;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--primary-green);
+}
+
+.stat-label {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.chart-toggle {
+  display: flex;
+  background: var(--bg-cream);
+  border-radius: var(--radius-full);
+  padding: 4px;
+  flex-shrink: 0;
+  /* Prevent squishing */
+}
+
+/* Fix Card Header Collision */
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-2xl);
+  /* Huge margin to be safe */
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: var(--space-md);
+}
+
+.card-title {
+  min-width: 0;
+  /* Allow title to shrink if needed */
+  flex: 1;
+  font-size: 1.1rem;
+  font-weight: 700;
 }
 
 /* ═══════════════════════════════════════════════════════════════

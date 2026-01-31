@@ -31,9 +31,19 @@
         </div>
 
         <div class="navbar-actions">
-          <button class="btn-menu" title="Menu" onclick="toggleMobileMenu()">
-            <span>•••</span>
-          </button>
+          <div class="navbar-dropdown">
+            <button class="btn-menu" title="Menu" onclick="toggleMobileMenu()">
+              <span>•••</span>
+            </button>
+            <div class="dropdown-menu" id="navbarDropdownMenu">
+              <a href="settings.html" class="dropdown-item">
+                <span>⚙️</span> Settings
+              </a>
+              <button class="dropdown-item logout" onclick="api.logout()">
+                <span>🚪</span> Logout
+              </button>
+            </div>
+          </div>
 
           <!-- Notification Bell -->
           <div class="notification-wrapper" id="notificationWrapper">
@@ -172,7 +182,13 @@
               <div class="streak-stat" id="currentStreak">
                 <span class="streak-icon">🔥</span>
                 <div class="streak-info">
-                  <h3>0 Days</h3>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <h3>0 Days</h3>
+                    <div id="dashboardGraceActive" class="hidden"
+                      style="background: var(--accent-orange); color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.65rem; font-weight: 700;">
+                      🛡️ PROTECTED
+                    </div>
+                  </div>
                   <p>Current Streak <span class="streak-badge">Keep it up!</span></p>
                 </div>
               </div>
@@ -228,6 +244,13 @@
             <option value="Social">Social</option>
             <option value="Finance">Finance</option>
             <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="habitCalendar">Calendar</label>
+          <select id="habitCalendar" class="form-input form-select">
+            <option value="personal">👤 My Calendar (Personal)</option>
           </select>
         </div>
 
@@ -342,6 +365,7 @@
             <option value="🌱">🌱 Growth</option>
             <option value="😴">😴 Sleep</option>
             <option value="🍎">🍎 Nutrition</option>
+            <option value="👨‍👩‍👧‍👦">👨‍👩‍👧‍👦 Going Out</option>
           </select>
         </div>
 

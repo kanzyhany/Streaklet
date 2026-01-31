@@ -207,9 +207,19 @@
                         </div>
                     </div>
 
-                    <button class="btn-menu" title="Menu" onclick="toggleMobileMenu()">
-                        <span>•••</span>
-                    </button>
+                    <div class="navbar-dropdown">
+                        <button class="btn-menu" title="Menu" onclick="toggleMobileMenu()">
+                            <span>•••</span>
+                        </button>
+                        <div class="dropdown-menu" id="navbarDropdownMenu">
+                            <a href="settings.html" class="dropdown-item">
+                                <span>⚙️</span> Settings
+                            </a>
+                            <button class="dropdown-item logout" onclick="api.logout()">
+                                <span>🚪</span> Logout
+                            </button>
+                        </div>
+                    </div>
                     <div class="user-avatar">
                         <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=streaklet" alt="User avatar">
                     </div>
@@ -266,8 +276,188 @@
         </main>
     </div>
 
+    <div class="modal-overlay" id="habitModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Edit Habit</h2>
+                <button class="modal-close" onclick="closeHabitModal()">✕</button>
+            </div>
+
+            <form id="habitForm">
+                <div class="form-group">
+                    <label class="form-label" for="habitTitle">Habit Name</label>
+                    <input type="text" id="habitTitle" class="form-input" placeholder="e.g., Morning Workout" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="habitCategory">Category</label>
+                    <select id="habitCategory" class="form-input form-select">
+                        <option value="Health">Health</option>
+                        <option value="Learning">Learning</option>
+                        <option value="Mindfulness">Mindfulness</option>
+                        <option value="Wellness">Wellness</option>
+                        <option value="Productivity">Productivity</option>
+                        <option value="Social">Social</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="habitCalendar">Calendar</label>
+                    <select id="habitCalendar" class="form-input form-select">
+                        <option value="personal">👤 My Calendar (Personal)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Frequency Type</label>
+                    <div class="flex gap-sm" style="margin-bottom: 12px;">
+                        <label
+                            style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--bg-cream); border-radius: 10px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;"
+                            class="frequency-type-option selected" data-type="weekly">
+                            <input type="radio" name="frequencyType" value="weekly" checked style="display: none;">
+                            <span style="font-size: 1.1rem;">📅</span>
+                            <span>Weekly</span>
+                        </label>
+                        <label
+                            style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--bg-cream); border-radius: 10px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;"
+                            class="frequency-type-option" data-type="yearly">
+                            <input type="radio" name="frequencyType" value="yearly" style="display: none;">
+                            <span style="font-size: 1.1rem;">🎂</span>
+                            <span>Yearly</span>
+                        </label>
+                        <label
+                            style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--bg-cream); border-radius: 10px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;"
+                            class="frequency-type-option" data-type="one-time">
+                            <input type="radio" name="frequencyType" value="one-time" style="display: none;">
+                            <span style="font-size: 1.1rem;">🗓️</span>
+                            <span>One-Time</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Weekly Days Selection -->
+                <div class="form-group" id="weeklyFrequencyGroup">
+                    <label class="form-label">Days of the Week</label>
+                    <div class="flex gap-sm" style="flex-wrap: wrap;">
+                        <label
+                            style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--bg-cream); border-radius: 20px; cursor: pointer;">
+                            <input type="checkbox" name="frequency" value="Sun" checked> Sun
+                        </label>
+                        <label
+                            style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--bg-cream); border-radius: 20px; cursor: pointer;">
+                            <input type="checkbox" name="frequency" value="Mon" checked> Mon
+                        </label>
+                        <label
+                            style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--bg-cream); border-radius: 20px; cursor: pointer;">
+                            <input type="checkbox" name="frequency" value="Tue" checked> Tue
+                        </label>
+                        <label
+                            style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--bg-cream); border-radius: 20px; cursor: pointer;">
+                            <input type="checkbox" name="frequency" value="Wed" checked> Wed
+                        </label>
+                        <label
+                            style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--bg-cream); border-radius: 20px; cursor: pointer;">
+                            <input type="checkbox" name="frequency" value="Thu" checked> Thu
+                        </label>
+                        <label
+                            style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--bg-cream); border-radius: 20px; cursor: pointer;">
+                            <input type="checkbox" name="frequency" value="Fri" checked> Fri
+                        </label>
+                        <label
+                            style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--bg-cream); border-radius: 20px; cursor: pointer;">
+                            <input type="checkbox" name="frequency" value="Sat" checked> Sat
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Yearly Date Selection -->
+                <div class="form-group" id="yearlyFrequencyGroup" style="display: none;">
+                    <label class="form-label">Date (Month & Day)</label>
+                    <div class="flex gap-sm">
+                        <select id="yearlyMonth" class="form-input form-select" style="flex: 1;">
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                        <select id="yearlyDay" class="form-input form-select" style="flex: 1;">
+                        </select>
+                    </div>
+                </div>
+
+                <!-- One-Time Date Selection -->
+                <div class="form-group" id="oneTimeFrequencyGroup" style="display: none;">
+                    <label class="form-label">Specific Date</label>
+                    <input type="date" id="specificDate" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="habitReminder">Reminder Time</label>
+                    <input type="time" id="habitReminder" class="form-input" value="09:00">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="habitIcon">Icon</label>
+                    <select id="habitIcon" class="form-input form-select">
+                        <option value="🎯">🎯 Target</option>
+                        <option value="💪">💪 Workout</option>
+                        <option value="📚">📚 Reading</option>
+                        <option value="🧘">🧘 Meditation</option>
+                        <option value="💧">💧 Water</option>
+                        <option value="🏃">🏃 Running</option>
+                        <option value="✍️">✍️ Writing</option>
+                        <option value="🎨">🎨 Creative</option>
+                        <option value="💰">💰 Finance</option>
+                        <option value="🌱">🌱 Growth</option>
+                        <option value="😴">😴 Sleep</option>
+                        <option value="🍎">🍎 Nutrition</option>
+                        <option value="👨‍👩‍👧‍👦">👨‍👩‍👧‍👦 Going Out</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Color</label>
+                    <div class="color-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;">
+                        <input type="radio" name="habitColorRadio" value="#4A7C59" id="color1" checked
+                            style="display:none;">
+                        <label for="color1" class="color-option selected"
+                            style="background: #4A7C59; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;"></label>
+                        <input type="radio" name="habitColorRadio" value="#D94B3D" id="color2" style="display:none;">
+                        <label for="color2" class="color-option"
+                            style="background: #D94B3D; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;"></label>
+                        <input type="radio" name="habitColorRadio" value="#F2B84B" id="color3" style="display:none;">
+                        <label for="color3" class="color-option"
+                            style="background: #F2B84B; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;"></label>
+                        <input type="radio" name="habitColorRadio" value="#3D5A80" id="color4" style="display:none;">
+                        <label for="color4" class="color-option"
+                            style="background: #3D5A80; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;"></label>
+                        <input type="radio" name="habitColorRadio" value="#9B59B6" id="color5" style="display:none;">
+                        <label for="color5" class="color-option"
+                            style="background: #9B59B6; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;"></label>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeHabitModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="saveHabitBtn">Update Habit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="js/api.js?v=7"></script>
     <script src="js/habits.js?v=7"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </body>
 
 </html>

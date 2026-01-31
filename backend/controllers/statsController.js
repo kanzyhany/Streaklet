@@ -104,13 +104,42 @@ const getWeeklyStats = async (req, res) => {
             // Get habits for this day
             const habitsForDay = habits.filter(h => h.frequency.includes(dayName));
             const dayLogs = logs.filter(log => log.date === date);
+
             const completedCount = dayLogs.filter(log => log.status === 'done').length;
+            const skippedCount = dayLogs.filter(log => log.status === 'skipped').length;
             const totalForDay = habitsForDay.length;
+
+            // Calculate missed: 
+            // For past days: Total - (Done + Skipped)
+            // For today: Only count explicit 'missed' status (since day isn't over)
+            let missedCount = 0;
+
+            const userTimezone = req.user.timezone || 'UTC';
+            const now = new Date();
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: userTimezone,
+                year: 'numeric',
+                month: 'numeric',
+                day: 'numeric'
+            });
+            const parts = formatter.formatToParts(now);
+            const dateParts = {};
+            parts.forEach(p => dateParts[p.type] = p.value);
+            const todayStr = `${dateParts.year}-${dateParts.month.toString().padStart(2, '0')}-${dateParts.day.toString().padStart(2, '0')}`;
+
+            const isPast = date < todayStr;
+
+            if (isPast) {
+                missedCount = Math.max(0, totalForDay - completedCount - skippedCount);
+            } else {
+                missedCount = dayLogs.filter(log => log.status === 'missed').length;
+            }
 
             return {
                 date,
                 day: dayName,
                 completed: completedCount,
+                missed: missedCount,
                 total: totalForDay,
                 percentage: totalForDay > 0 ? Math.round((completedCount / totalForDay) * 100) : 0,
                 isPerfectDay: totalForDay > 0 && completedCount === totalForDay

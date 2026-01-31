@@ -5,7 +5,6 @@ const streakSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Habit',
         required: true,
-        unique: true,
         index: true
     },
     userId: {
@@ -27,6 +26,11 @@ const streakSchema = new mongoose.Schema({
     lastCompletedDate: {
         type: String // Format: YYYY-MM-DD
     },
+    totalStreaksAchieved: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
     graceDaysUsed: {
         type: Number,
         default: 0,
@@ -41,5 +45,7 @@ streakSchema.pre('save', function (next) {
     }
     next();
 });
+
+streakSchema.index({ habitId: 1, userId: 1 }, { unique: true });
 
 module.exports = mongoose.model('Streak', streakSchema);

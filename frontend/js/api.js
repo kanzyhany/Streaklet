@@ -150,8 +150,12 @@ class APIService {
     // Habit Endpoints
     // ═══════════════════════════════════════════════════════════════
 
-    async getHabits() {
-        return this.get('/habits');
+    async getHabits(calendarId = null) {
+        let endpoint = '/habits';
+        if (calendarId) {
+            endpoint += `?calendarId=${calendarId}`;
+        }
+        return this.get(endpoint);
     }
 
     async getTodaysHabits() {
@@ -217,6 +221,15 @@ class APIService {
     }
 
     // ═══════════════════════════════════════════════════════════════
+    // Update member role
+    async updateMemberRole(calendarId, memberId, role) {
+        return this.request(`/shared-calendars/${calendarId}/members/${memberId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ role })
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     // Notification Endpoints
     // ═══════════════════════════════════════════════════════════════
 
@@ -240,8 +253,54 @@ class APIService {
         return this.request('/notifications/generate', { method: 'POST' });
     }
 
-    async getMonthlyLogs(year, month) {
-        return this.request(`/logs/monthly?year=${year}&month=${month}`);
+    async getMonthlyLogs(year, month, calendarId = null) {
+        let endpoint = `/logs/monthly?year=${year}&month=${month}`;
+        if (calendarId) {
+            endpoint += `&calendarId=${calendarId}`;
+        }
+        return this.request(endpoint);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Shared Calendar Endpoints
+    // ═══════════════════════════════════════════════════════════════
+
+    async getSharedCalendars() {
+        return this.get('/shared-calendars');
+    }
+
+    async createSharedCalendar(name) {
+        return this.post('/shared-calendars', { name });
+    }
+
+    async joinSharedCalendar(code) {
+        return this.post(`/shared-calendars/join/${code}`, {});
+    }
+
+    async getCalendarMembers(id) {
+        return this.get(`/shared-calendars/${id}/members`);
+    }
+
+    async deleteSharedCalendar(id) {
+        return this.delete(`/shared-calendars/${id}`);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Grace Day Endpoints
+    // ═══════════════════════════════════════════════════════════════
+
+    async getGraceStatus() {
+        return this.get('/grace/status');
+    }
+
+    async activateGraceDay(calendarId = null) {
+        const body = {};
+        if (calendarId) body.calendarId = calendarId;
+        return this.post('/grace/activate', body);
+    }
+
+    async getGraceHistory(limit = 30) {
+        return this.get(`/grace/history?limit=${limit}`);
     }
 }
 
@@ -250,11 +309,20 @@ const api = new APIService();
 
 // Global UI Functions
 function toggleMobileMenu() {
-    const nav = document.querySelector('.navbar-nav');
-    if (nav) {
-        nav.classList.toggle('show');
+    const dropdown = document.getElementById('navbarDropdownMenu');
+    if (dropdown) {
+        dropdown.classList.toggle('show');
     }
 }
+
+// Close dropdowns when clicking outside
+window.addEventListener('click', (e) => {
+    if (!e.target.closest('.navbar-dropdown')) {
+        const dropdown = document.getElementById('navbarDropdownMenu');
+        if (dropdown) dropdown.classList.remove('show');
+    }
+});
+
 
 // Auth guard - redirect to login if not authenticated
 function requireAuth() {

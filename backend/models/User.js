@@ -26,9 +26,24 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: 'UTC'
     },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user'
+    },
     notificationSettings: {
         habitReminders: { type: Boolean, default: true },
         generalEmails: { type: Boolean, default: true }
+    },
+    personalPoints: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+    personalGraceDays: {
+        type: Number,
+        default: 0,
+        min: 0
     },
     createdAt: {
         type: Date,

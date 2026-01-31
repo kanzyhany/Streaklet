@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streaklet - How Streaks Work</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
+    <style>
+        .help-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: var(--space-xl);
+        }
+
+        .help-header {
+            text-align: center;
+            margin-bottom: var(--space-xl);
+        }
+
+        .help-header h1 {
+            font-size: 2.5rem;
+            color: var(--text-primary);
+            margin-bottom: var(--space-sm);
+        }
+
+        .help-header p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        .help-section {
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            padding: var(--space-xl);
+            margin-bottom: var(--space-lg);
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--border-light);
+        }
+
+        .help-section h2 {
+            font-size: 1.8rem;
+            color: var(--primary-green);
+            margin-bottom: var(--space-md);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .help-section h3 {
+            font-size: 1.3rem;
+            color: var(--text-primary);
+            margin-top: var(--space-lg);
+            margin-bottom: var(--space-sm);
+        }
+
+        .help-section p {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-md);
+        }
+
+        .help-section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .help-section ul li {
+            padding: var(--space-sm) 0;
+            padding-left: var(--space-lg);
+            position: relative;
+            font-size: 1rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .help-section ul li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--primary-green);
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .example-box {
+            background: var(--bg-cream);
+            border-left: 4px solid var(--primary-green);
+            padding: var(--space-md);
+            border-radius: var(--radius-md);
+            margin: var(--space-md) 0;
+        }
+
+        .example-box strong {
+            color: var(--primary-green);
+            display: block;
+            margin-bottom: var(--space-sm);
+        }
+
+        .streak-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-md);
+            margin: var(--space-lg) 0;
+            flex-wrap: wrap;
+        }
+
+        .streak-step {
+            background: var(--bg-cream);
+            padding: var(--space-md);
+            border-radius: var(--radius-md);
+            text-align: center;
+            min-width: 120px;
+            border: 2px solid var(--border-light);
+        }
+
+        .streak-step.highlight {
+            background: var(--primary-green-subtle);
+            border-color: var(--primary-green);
+        }
+
+        .streak-step .number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-green);
+        }
+
+        .streak-step .label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: var(--space-xs);
+        }
+
+        .arrow {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+        }
+
+        .back-button-container {
+            text-align: center;
+            margin-top: var(--space-xl);
+            padding-top: var(--space-xl);
+            border-top: 1px solid var(--border-light);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-layout">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="navbar-container">
+                <a href="index.html" class="navbar-brand">
+                    <span class="logo-icon">🌿</span>
+                    <span>Streaklet</span>
+                </a>
+
+                <div class="navbar-nav">
+                    <a href="index.html" class="nav-link">Dashboard</a>
+                    <a href="calendar.html" class="nav-link">Calendar</a>
+                    <a href="habits.html" class="nav-link">My Habits</a>
+                    <a href="progress.html" class="nav-link">Progress</a>
+                    <a href="settings.html" class="nav-link">Settings</a>
+                </div>
+
+                <div class="navbar-actions">
+                    <div class="navbar-dropdown">
+                        <button class="btn-menu" title="Menu" onclick="toggleMobileMenu()">
+                            <span>•••</span>
+                        </button>
+                        <div class="dropdown-menu" id="navbarDropdownMenu">
+                            <a href="settings.html" class="dropdown-item">
+                                <span>⚙️</span> Settings
+                            </a>
+                            <button class="dropdown-item logout" onclick="api.logout()">
+                                <span>🚪</span> Logout
+                            </button>
+                        </div>
+                    </div>
+                    <div class="user-avatar">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=streaklet" alt="User avatar">
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="help-container">
+                <div class="help-header">
+                    <h1>🔥 How Streaks & Rewards Work</h1>
+                    <p>Build consistency, earn points, and protect your progress with grace days!</p>
+                </div>
+
+                <!-- What Are Streaks -->
+                <div class="help-section">
+                    <h2>📊 What Are Streaks?</h2>
+                    <p>A <strong>streak</strong> is the number of consecutive days you've completed a specific habit.
+                        Each
+                        habit tracks its own streak independently.</p>
+
+                    <div class="example-box">
+                        <strong>Example:</strong>
+                        If you complete "Drink Water" every day for 7 days in a row, you have a 7-day streak for that
+                        habit. If you miss a day, your streak resets to 0.
+                    </div>
+
+                    <h3>How Streaks Build:</h3>
+                    <ul>
+                        <li>Mark a habit as "Done" today → Streak increases by 1</li>
+                        <li>Complete it again tomorrow → Streak increases to 2</li>
+                        <li>Keep the chain going! → Streak keeps growing</li>
+                        <li>Miss a day or mark as "Missed" → Streak resets to 0</li>
+                    </ul>
+                </div>
+
+                <!-- Points System -->
+                <div class="help-section">
+                    <h2>⭐ Points System</h2>
+                    <p>Earn points automatically when you reach streak milestones! Points work differently for personal
+                        vs. shared calendars.</p>
+
+                    <h3>Personal Calendar Points:</h3>
+                    <div class="streak-flow">
+                        <div class="streak-step highlight">
+                            <div class="number">5</div>
+                            <div class="label">Day Streak</div>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="streak-step highlight">
+                            <div class="number">+5</div>
+                            <div class="label">Points</div>
+                        </div>
+                    </div>
+
+                    <ul>
+                        <li>Every 5-day streak milestone (5, 10, 15, 20...) → Earn 5 points</li>
+                        <li>Points accumulate until you reach 10 points</li>
+                        <li>At 10 points → Automatically get 1 grace day!</li>
+                        <li>Points reset to 0 after earning a grace day</li>
+                    </ul>
+
+                    <div class="example-box">
+                        <strong>Personal Calendar Example:</strong>
+                        <ol style="padding-left: 20px; margin-top: 8px;">
+                            <li>Complete habit for 5 days → Get 5 points (5/10)</li>
+                            <li>Continue to 10 days → Get 5 more points (10/10) → <strong>1 Grace Day Awarded!</strong>
+                            </li>
+                            <li>Points reset to 0/10, start earning again</li>
+                        </ol>
+                    </div>
+
+                    <h3>Shared Calendar Points:</h3>
+                    <div class="streak-flow">
+                        <div class="streak-step">
+                            <div class="number">5</div>
+                            <div class="label">Member's Streak</div>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="streak-step highlight">
+                            <div class="number">+2</div>
+                            <div class="label">Calendar Points</div>
+                        </div>
+                    </div>
+
+                    <ul>
+                        <li>When ANY member reaches a 5-streak milestone → Calendar gets 2 points</li>
+                        <li>Calendar points are shared by the whole group</li>
+                        <li>At 10 calendar points → <strong>ALL members</strong> get 1 grace day!</li>
+                        <li>Points reset to 0 after grace days are awarded</li>
+                    </ul>
+
+                    <div class="example-box">
+                        <strong>Shared Calendar Example:</strong>
+                        <ol style="padding-left: 20px; margin-top: 8px;">
+                            <li>Member A reaches 5-day streak → Calendar gets +2 points (2/10)</li>
+                            <li>Member B reaches 5-day streak → Calendar gets +2 points (4/10)</li>
+                            <li>Member A reaches 10-day streak → Calendar gets +2 points (6/10)</li>
+                            <li>Member C reaches 5-day streak → Calendar gets +2 points (8/10)</li>
+                            <li>Member B reaches 10-day streak → Calendar gets +2 points (10/10) → <strong>Everyone gets
+                                    1
+                                    grace day!</strong></li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Grace Days -->
+                <div class="help-section">
+                    <h2>🛡️ Grace Days</h2>
+                    <p>Grace days are your safety net! Use them to protect your streaks when life gets in the way.</p>
+
+                    <h3>How Grace Days Work:</h3>
+                    <ul>
+                        <li>Click "Use Grace Day" button before or during a day you might miss</li>
+                        <li>If you skip a habit that day, your streak <strong>won't reset</strong></li>
+                        <li>Grace days are consumed when used, even if you don't skip</li>
+                        <li>Personal grace days only protect personal calendar habits</li>
+                        <li>Shared grace days only protect shared calendar habits</li>
+                    </ul>
+
+                    <div class="example-box">
+                        <strong>Grace Day Example:</strong>
+                        You have a 12-day streak on "Morning Exercise" but you're traveling tomorrow:
+                        <ol style="padding-left: 20px; margin-top: 8px;">
+                            <li>Today: Click "Use Grace Day" (Grace days: 1 → 0)</li>
+                            <li>Tomorrow: Even if you don't exercise, your streak stays at 12!</li>
+                            <li>Day after: Resume exercising normally, streak continues</li>
+                        </ol>
+                    </div>
+
+                    <h3>Important Notes:</h3>
+                    <ul>
+                        <li>Grace days can only be activated once per day</li>
+                        <li>If you try to activate twice, you'll see: "Grace day for today is already activated"</li>
+                        <li>Grace days protect ALL your habits for that calendar on that day</li>
+                        <li>Use them wisely - they take time to earn!</li>
+                    </ul>
+                </div>
+
+                <!-- Quick Reference -->
+                <div class="help-section">
+                    <h2>📋 Quick Reference</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: var(--bg-cream);">
+                                <th
+                                    style="padding: var(--space-sm); text-align: left; border: 1px solid var(--border-light);">
+                                    Action</th>
+                                <th
+                                    style="padding: var(--space-sm); text-align: left; border: 1px solid var(--border-light);">
+                                    Personal Calendar</th>
+                                <th
+                                    style="padding: var(--space-sm); text-align: left; border: 1px solid var(--border-light);">
+                                    Shared Calendar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="padding: var(--space-sm); border: 1px solid var(--border-light);">5-Day
+                                    Streak
+                                </td>
+                                <td style="padding: var(--space-sm); border: 1px solid var(--border-light);">+5 Points
+                                </td>
+                                <td style="padding: var(--space-sm); border: 1px solid var(--border-light);">+2 Calendar
+                                    Points</td>
+                            </tr>
+                            <tr style="background: var(--bg-cream);">
+                                <td style="padding: var(--space-sm); border: 1px solid var(--border-light);">10 Points
+                                </td>
+                                <td style="padding: var(--space-sm); border: 1px solid var(--border-light);">+1 Grace
+                                    Day
+                                </td>
+                                <td style="padding: var(--space-sm); border: 1px solid var(--border-light);">+1 Grace
+                                    Day
+                                    (each member)</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: var(--space-sm); border: 1px solid var(--border-light);">Grace Day
+                                    Usage
+                                </td>
+                                <td style="padding: var(--space-sm); border: 1px solid var(--border-light);">Protects
+                                    personal habits</td>
+                                <td style="padding: var(--space-sm); border: 1px solid var(--border-light);">Protects
+                                    shared
+                                    habits</td>
+                            </tr>
+                            <tr style="background: var(--bg-cream);">
+                                <td style="padding: var(--space-sm); border: 1px solid var(--border-light);">Miss a
+                                    Habit
+                                </td>
+                                <td style="padding: var(--space-sm); border: 1px solid var(--border-light);"
+                                    colspan="2">
+                                    Streak resets to 0 (unless grace day active)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Back Button -->
+                <div class="back-button-container">
+                    <a href="calendar.html" class="btn btn-primary" style="padding: var(--space-md) var(--space-xl);">
+                        ← Back to Calendar
+                    </a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+</body>
+
+</html>
