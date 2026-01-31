@@ -125,6 +125,45 @@
                         <a href="#" class="view-all-link">View All</a>
                     </div>
                 </div>
+
+                <!-- AI Insights Section -->
+                <div class="card ai-insights-card">
+                    <div class="card-header">
+                        <h2 class="card-title">🤖 AI Insights</h2>
+                        <p class="card-subtitle">Ask me anything about your habits!</p>
+                    </div>
+
+                    <!-- Quick Prompts -->
+                    <div class="quick-prompts">
+                        <button class="quick-prompt-btn" onclick="askQuickPrompt('Summarize my week')">
+                            📊 Summarize my week
+                        </button>
+                        <button class="quick-prompt-btn"
+                            onclick="askQuickPrompt('What kind of person am I based on my habits?')">
+                            🧠 Who am I?
+                        </button>
+                        <button class="quick-prompt-btn" onclick="askQuickPrompt('What is my best habit and why?')">
+                            🏆 My best habit
+                        </button>
+                    </div>
+
+                    <!-- Chat History -->
+                    <div class="chat-history" id="chatHistory">
+                        <div class="chat-welcome">
+                            <span class="chat-welcome-icon">🌿</span>
+                            <p>Hi! I'm your habit assistant. Ask me about your progress, streaks, or reflections!</p>
+                        </div>
+                    </div>
+
+                    <!-- Chat Input -->
+                    <div class="chat-input-area">
+                        <input type="text" id="chatInput" class="chat-input" placeholder="Ask about your habits..."
+                            onkeypress="handleChatKeypress(event)" />
+                        <button class="chat-send-btn" onclick="sendAIQuestion()" id="chatSendBtn">
+                            <span>➤</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </main>
     </div>

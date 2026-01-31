@@ -106,16 +106,18 @@ function createHabitCard(habit, completions = {}) {
     const status = habit.todayStatus || 'pending';
     const statusBadge = getStatusBadge(status, habit.reminderTime);
     const categoryClass = habit.category.toLowerCase();
+    const hasNote = habit.todayNotes && habit.todayNotes.trim().length > 0;
 
     return `
-    <div class="habit-card" data-habit-id="${habit._id}" data-status="${status}">
-      <div class="habit-icon ${categoryClass}">
-        ${habit.icon || '🎯'}
-      </div>
-      <div class="habit-info">
-        <div class="habit-title">${escapeHtml(habit.title)}</div>
-        <div class="habit-category">${habit.category}</div>
-        ${(() => {
+    <div class="habit-card-wrapper" data-habit-id="${habit._id}">
+      <div class="habit-card" data-habit-id="${habit._id}" data-status="${status}">
+        <div class="habit-icon ${categoryClass}">
+          ${habit.icon || '🎯'}
+        </div>
+        <div class="habit-info">
+          <div class="habit-title">${escapeHtml(habit.title)}</div>
+          <div class="habit-category">${habit.category}</div>
+          ${(() => {
             const others = completions[habit._id] || [];
             if (others && others.length > 0) {
                 const namesText = others.length > 3
@@ -127,15 +129,81 @@ function createHabitCard(habit, completions = {}) {
             }
             return '';
         })()}
+        </div>
+        <div class="habit-status">
+          ${statusBadge}
+          <div class="habit-actions">
+            <button 
+              class="btn-note ${hasNote ? 'active' : ''}" 
+              title="${status === 'done' ? 'Add a note' : 'Complete habit to add a note'}" 
+              onclick="toggleNoteArea('${habit._id}')"
+              ${status !== 'done' ? 'disabled' : ''}
+            >
+              <span>📝</span>
+            </button>
+            <button class="status-action" title="More options">
+              <span>›</span>
+            </button>
+          </div>
+        </div>
       </div>
-      <div class="habit-status">
-        ${statusBadge}
-        <button class="status-action" title="More options">
-          <span>›</span>
-        </button>
+      <div class="habit-note-area ${hasNote ? 'visible' : ''}" id="noteArea-${habit._id}">
+        <textarea placeholder="How did it go? (optional)" class="note-input" id="noteInput-${habit._id}">${escapeHtml(habit.todayNotes || '')}</textarea>
+        <button class="btn-save-note" onclick="saveHabitNote('${habit._id}')">Save Reflection</button>
       </div>
     </div>
   `;
+}
+
+function toggleNoteArea(habitId) {
+    const card = document.querySelector(`.habit-card[data-habit-id="${habitId}"]`);
+    if (card && card.dataset.status !== 'done') return;
+
+    const area = document.getElementById(`noteArea-${habitId}`);
+    if (area) {
+        area.classList.toggle('visible');
+        if (area.classList.contains('visible')) {
+            area.querySelector('textarea').focus();
+        }
+    }
+}
+
+async function saveHabitNote(habitId) {
+    const noteInput = document.getElementById(`noteInput-${habitId}`);
+    const note = noteInput.value;
+    const saveBtn = noteInput.nextElementSibling;
+    const card = document.querySelector(`.habit-card-wrapper[data-habit-id="${habitId}"] .habit-card`);
+    const status = card.dataset.status;
+
+    try {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+
+        const response = await api.logHabit(habitId, status, note);
+
+        if (response.success) {
+            saveBtn.textContent = 'Saved! ✓';
+            saveBtn.classList.add('success');
+
+            // Update the note button icon
+            const noteBtn = document.querySelector(`.habit-card-wrapper[data-habit-id="${habitId}"] .btn-note`);
+            if (note.trim().length > 0) {
+                noteBtn.classList.add('active');
+            } else {
+                noteBtn.classList.remove('active');
+            }
+
+            setTimeout(() => {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Reflection';
+                saveBtn.classList.remove('success');
+            }, 2000);
+        }
+    } catch (error) {
+        console.error('Error saving note:', error);
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Failed to save';
+    }
 }
 
 function getStatusBadge(status, reminderTime) {
@@ -200,7 +268,7 @@ async function updateHabitStatus(habitId, status) {
         }
     } catch (error) {
         console.error('Error updating habit:', error);
-        alert('Failed to update habit. Please try again.');
+        alert(`Failed to update habit: ${error.message || 'Please try again.'}`);
     }
 }
 
@@ -211,18 +279,6 @@ function showHabitMenu(habitId, cardElement) {
 
     const menu = document.createElement('div');
     menu.className = 'habit-menu';
-    menu.style.cssText = `
-    position: absolute;
-    right: 0;
-    top: 100%;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    padding: 8px;
-    z-index: 100;
-    min-width: 150px;
-  `;
-
     menu.innerHTML = `
     <button class="menu-item" onclick="updateHabitStatus('${habitId}', 'done')">
       ✓ Mark Done
@@ -233,30 +289,13 @@ function showHabitMenu(habitId, cardElement) {
     <button class="menu-item" onclick="updateHabitStatus('${habitId}', 'skipped')">
       ⏭ Skip Today
     </button>
-    <hr style="margin: 8px 0; border: none; border-top: 1px solid #e2e8f0;">
+    <hr class="menu-divider">
     <button class="menu-item" onclick="editHabit('${habitId}')">
       ✏️ Edit Habit
     </button>
   `;
 
-    // Style menu items
-    menu.querySelectorAll('.menu-item').forEach(item => {
-        item.style.cssText = `
-      display: block;
-      width: 100%;
-      padding: 8px 12px;
-      text-align: left;
-      border: none;
-      background: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.9rem;
-    `;
-        item.addEventListener('mouseenter', () => item.style.background = '#f5f5f5');
-        item.addEventListener('mouseleave', () => item.style.background = 'none');
-    });
-
-    cardElement.style.position = 'relative';
+    cardElement.classList.add('relative');
     cardElement.appendChild(menu);
 
     // Close menu when clicking outside
@@ -264,6 +303,7 @@ function showHabitMenu(habitId, cardElement) {
         document.addEventListener('click', function closeMenu(e) {
             if (!menu.contains(e.target)) {
                 menu.remove();
+                cardElement.classList.remove('relative');
                 document.removeEventListener('click', closeMenu);
             }
         });

@@ -235,6 +235,7 @@ const getTodaysHabits = async (req, res) => {
                 return {
                     ...habit.toObject(),
                     todayStatus: log?.status || 'pending',
+                    todayNotes: log?.notes || '',
                     currentStreak: streak?.currentStreak || 0,
                     longestStreak: streak?.longestStreak || 0
                 };
