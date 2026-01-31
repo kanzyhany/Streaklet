@@ -182,7 +182,7 @@ class APIService {
     // Habit Log Endpoints
     // ═══════════════════════════════════════════════════════════════
 
-    async logHabit(habitId, status, date = null, notes = '') {
+    async logHabit(habitId, status, notes = '', date = null) {
         const body = { status, notes };
         if (date) body.date = date;
         return this.post(`/habits/${habitId}/log`, body);
@@ -301,6 +301,14 @@ class APIService {
 
     async getGraceHistory(limit = 30) {
         return this.get(`/grace/history?limit=${limit}`);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // AI Chat Endpoints
+    // ═══════════════════════════════════════════════════════════════
+
+    async askAI(query) {
+        return this.post('/chat/ask', { query });
     }
 }
 

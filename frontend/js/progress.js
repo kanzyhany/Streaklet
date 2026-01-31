@@ -262,3 +262,109 @@ function escapeHtml(text) {
   div.textContent = text;
   return div.innerHTML;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// AI Insights Chat
+// ═══════════════════════════════════════════════════════════════
+
+let isAILoading = false;
+
+async function sendAIQuestion() {
+  const input = document.getElementById('chatInput');
+  const sendBtn = document.getElementById('chatSendBtn');
+  const query = input.value.trim();
+
+  if (!query || isAILoading) return;
+
+  // Clear input
+  input.value = '';
+
+  // Add user message to chat
+  addChatMessage(query, 'user');
+
+  // Show loading state
+  isAILoading = true;
+  sendBtn.disabled = true;
+  sendBtn.innerHTML = '<span class="loading-dots">...</span>';
+
+  const loadingId = addChatMessage('Thinking...', 'ai', true);
+
+  try {
+    const response = await api.askAI(query);
+
+    // Remove loading message
+    removeChatMessage(loadingId);
+
+    if (response.success) {
+      addChatMessage(response.data.response, 'ai');
+    } else {
+      addChatMessage('Sorry, I couldn\'t process that. Please try again!', 'ai');
+    }
+  } catch (error) {
+    console.error('AI Error:', error);
+    removeChatMessage(loadingId);
+    addChatMessage('Oops! Something went wrong. Please try again.', 'ai');
+  } finally {
+    isAILoading = false;
+    sendBtn.disabled = false;
+    sendBtn.innerHTML = '<span>➤</span>';
+  }
+
+  // Scroll to bottom
+  const chatHistory = document.getElementById('chatHistory');
+  chatHistory.scrollTop = chatHistory.scrollHeight;
+}
+
+function askQuickPrompt(prompt) {
+  const input = document.getElementById('chatInput');
+  input.value = prompt;
+  sendAIQuestion();
+}
+
+function addChatMessage(text, sender, isLoading = false) {
+  const chatHistory = document.getElementById('chatHistory');
+  const welcomeMsg = chatHistory.querySelector('.chat-welcome');
+  if (welcomeMsg) welcomeMsg.remove();
+
+  const messageId = 'msg-' + Date.now();
+  const bubble = document.createElement('div');
+  bubble.className = `chat-bubble ${sender}`;
+  bubble.id = messageId;
+
+  if (isLoading) {
+    bubble.classList.add('loading');
+  }
+
+  // Format the message (convert markdown-like formatting)
+  const formattedText = formatAIResponse(text);
+  bubble.innerHTML = formattedText;
+
+  chatHistory.appendChild(bubble);
+  chatHistory.scrollTop = chatHistory.scrollHeight;
+
+  return messageId;
+}
+
+function removeChatMessage(messageId) {
+  const message = document.getElementById(messageId);
+  if (message) message.remove();
+}
+
+function formatAIResponse(text) {
+  // Simple markdown-like formatting
+  let formatted = text
+    // Bold text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    // Emoji preservation (already works)
+    // Line breaks
+    .replace(/\n/g, '<br>');
+
+  return formatted;
+}
+
+function handleChatKeypress(event) {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    sendAIQuestion();
+  }
+}

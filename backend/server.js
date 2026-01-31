@@ -14,6 +14,7 @@ const statsRoutes = require('./routes/stats');
 const notificationRoutes = require('./routes/notifications');
 const sharedCalendarRoutes = require('./routes/sharedCalendarRoutes');
 const graceRoutes = require('./routes/graceRoutes');
+const chatRoutes = require('./routes/chatRoutes');
 
 // Initialize Express app
 const app = express();
@@ -34,6 +35,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/shared-calendars', sharedCalendarRoutes);
 app.use('/api/grace', graceRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
