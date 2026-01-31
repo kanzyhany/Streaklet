@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Manage your Streaklet account settings and preferences.">
+    <title>Settings | Streaklet</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
+</head>
+
+<body>
+    <div class="app-layout">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="navbar-container">
+                <a href="index.html" class="navbar-brand">
+                    <span class="logo-icon">🌿</span>
+                    <span>Streaklet</span>
+                </a>
+
+                <div class="navbar-nav">
+                    <a href="index.html" class="nav-link">Dashboard</a>
+                    <a href="habits.html" class="nav-link">My Habits</a>
+                    <a href="calendar.html" class="nav-link">Calendar</a>
+                    <a href="progress.html" class="nav-link">Progress</a>
+                    <a href="about.html" class="nav-link">About</a>
+                    <a href="settings.html" class="nav-link active">Settings</a>
+                </div>
+
+                <div class="navbar-actions">
+                    <div class="user-avatar" onclick="window.location.href='settings.html'" style="cursor: pointer;">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=streaklet" alt="User avatar">
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container" style="max-width: 600px;">
+                <!-- Page Header -->
+                <div class="page-greeting">
+                    <h1>Settings ⚙️</h1>
+                    <p>Manage your habit tracker.</p>
+                </div>
+
+                <!-- Settings Card -->
+                <div class="card">
+                    <!-- General Settings -->
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">General</h3>
+
+                        <form id="generalSettingsForm">
+                            <div class="form-group">
+                                <label class="form-label" for="userName">Name</label>
+                                <input type="text" id="userName" class="form-input" placeholder="Your name">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="userEmail">Email Address</label>
+                                <input type="email" id="userEmail" class="form-input" placeholder="you@example.com"
+                                    disabled>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </form>
+                    </div>
+
+                    <!-- App Preferences -->
+                    <div class="settings-section mt-xl">
+                        <h3 class="settings-section-title">Preferences</h3>
+                        <p style="font-size: 0.9rem; color: var(--text-muted);">No preferences available at this time.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/settings.js"></script>
+</body>
+
+</html>

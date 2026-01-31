@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Habits - Streaklet</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌿</text></svg>">
+    <style>
+        .habits-page-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: var(--space-xl);
+            align-items: start;
+        }
+
+        .filters-sidebar {
+            background: var(--bg-white);
+            padding: var(--space-lg);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 100px;
+        }
+
+        .filter-section {
+            margin-bottom: var(--space-xl);
+        }
+
+        .filter-section h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: var(--space-md);
+            font-weight: 700;
+        }
+
+        .filter-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            cursor: pointer;
+            padding: var(--space-xs) 0;
+            transition: color var(--transition-fast);
+        }
+
+        .filter-item:hover {
+            color: var(--primary-green);
+        }
+
+        .filter-item input {
+            cursor: pointer;
+        }
+
+        .habits-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-lg);
+        }
+
+        .sort-control {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .habits-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: var(--space-lg);
+        }
+
+        .habit-manage-card {
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+            transition: transform var(--transition-fast);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-md);
+        }
+
+        .habit-manage-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .habit-manage-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .habit-manage-icon {
+            font-size: 1.5rem;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-md);
+        }
+
+        .habit-manage-info h3 {
+            font-size: 1.1rem;
+            margin-bottom: 2px;
+        }
+
+        .habit-manage-meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .habit-manage-footer {
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: var(--space-md);
+            border-top: 1px solid var(--border-light);
+        }
+
+        @media (max-width: 1024px) {
+            .habits-page-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .filters-sidebar {
+                position: static;
+                margin-bottom: var(--space-lg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-layout">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="navbar-container">
+                <a href="index.html" class="navbar-brand">
+                    <span class="logo-icon">🌿</span>
+                    <span>Streaklet</span>
+                </a>
+
+                <div class="navbar-nav">
+                    <a href="index.html" class="nav-link">Dashboard</a>
+                    <a href="habits.html" class="nav-link active">My Habits</a>
+                    <a href="calendar.html" class="nav-link">Calendar</a>
+                    <a href="progress.html" class="nav-link">Progress</a>
+                    <a href="about.html" class="nav-link">About</a>
+                    <a href="settings.html" class="nav-link">Settings</a>
+                </div>
+
+                <div class="navbar-actions">
+                    <div class="user-avatar" onclick="window.location.href='settings.html'" style="cursor: pointer;">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=streaklet" alt="User avatar">
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <div class="habits-page-layout">
+                    <!-- Filters Sidebar -->
+                    <aside class="filters-sidebar">
+                        <div class="filter-section">
+                            <h3>Categories</h3>
+                            <div id="categoryFilterList" class="filter-list">
+                                <!-- Dynamic categories -->
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <h3>Colors</h3>
+                            <div id="colorFilterGrid" class="color-filter-grid"
+                                style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;">
+                                <!-- Dynamic colors -->
+                            </div>
+                        </div>
+
+                        <button class="btn btn-secondary w-full" id="clearFilters">Clear All Filters</button>
+                    </aside>
+
+                    <!-- Habits List -->
+                    <div class="habits-main">
+                        <div class="habits-header">
+                            <div class="page-greeting" style="padding: 0; margin: 0;">
+                                <h1>My Habits</h1>
+                                <p id="habitCount">Loading habits...</p>
+                            </div>
+                            <div class="sort-control">
+                                <label for="habitSort">Sort by:</label>
+                                <select id="habitSort" class="form-input" style="width: auto;">
+                                    <option value="newest">Newest First</option>
+                                    <option value="oldest">Oldest First</option>
+                                    <option value="alpha">Alphabetical</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="habitsList" class="habits-list">
+                            <!-- Habits will be injected here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="habitModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Edit Habit</h2>
+                <button class="modal-close" onclick="closeHabitModal()">✕</button>
+            </div>
+
+            <form id="habitForm">
+                <div class="form-group">
+                    <label class="form-label" for="habitTitle">Habit Name</label>
+                    <input type="text" id="habitTitle" class="form-input" placeholder="e.g., Morning Workout" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="habitCategory">Category</label>
+                    <select id="habitCategory" class="form-input form-select">
+                        <option value="Health">Health</option>
+                        <option value="Learning">Learning</option>
+                        <option value="Mindfulness">Mindfulness</option>
+                        <option value="Wellness">Wellness</option>
+                        <option value="Productivity">Productivity</option>
+                        <option value="Social">Social</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="habitCalendar">Calendar</label>
+                    <select id="habitCalendar" class="form-input form-select">
+                        <option value="personal">👤 My Calendar (Personal)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Frequency Type</label>
+                    <div class="flex gap-sm" style="margin-bottom: 12px;">
+                        <label
+                            style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--bg-cream); border-radius: 10px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;"
+                            class="frequency-type-option selected" data-type="weekly">
+                            <input type="radio" name="frequencyType" value="weekly" checked style="display: none;">
+                            <span style="font-size: 1.1rem;">📅</span>
+                            <span>Weekly</span>
+                        </label>
+                        <label
+                            style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--bg-cream); border-radius: 10px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;"
+                            class="frequency-type-option" data-type="yearly">
+                            <input type="radio" name="frequencyType" value="yearly" style="display: none;">
+                            <span style="font-size: 1.1rem;">🎂</span>
+                            <span>Yearly</span>
+                        </label>
+                        <label
+                            style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--bg-cream); border-radius: 10px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;"
+                            class="frequency-type-option" data-type="one-time">
+                            <input type="radio" name="frequencyType" value="one-time" style="display: none;">
+                            <span style="font-size: 1.1rem;">🗓️</span>
+                            <span>One-Time</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Weekly Days Selection -->
+                <div class="form-group" id="weeklyFrequencyGroup">
+                    <label class="form-label">Days of the Week</label>
+                    <div class="flex gap-sm" style="flex-wrap: wrap;">
+                        <label
+                            style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--bg-cream); border-radius: 20px; cursor: pointer;">
+                            <input type="checkbox" name="frequency" value="Sun" checked> Sun
+                        </label>
+                        <label
+                            style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--bg-cream); border-radius: 20px; cursor: pointer;">
+                            <input type="checkbox" name="frequency" value="Mon" checked> Mon
+                        </label>
+                        <label
+                            style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--bg-cream); border-radius: 20px; cursor: pointer;">
+                            <input type="checkbox" name="frequency" value="Tue" checked> Tue
+                        </label>
+                        <label
+                            style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--bg-cream); border-radius: 20px; cursor: pointer;">
+                            <input type="checkbox" name="frequency" value="Wed" checked> Wed
+                        </label>
+                        <label
+                            style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--bg-cream); border-radius: 20px; cursor: pointer;">
+                            <input type="checkbox" name="frequency" value="Thu" checked> Thu
+                        </label>
+                        <label
+                            style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--bg-cream); border-radius: 20px; cursor: pointer;">
+                            <input type="checkbox" name="frequency" value="Fri" checked> Fri
+                        </label>
+                        <label
+                            style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--bg-cream); border-radius: 20px; cursor: pointer;">
+                            <input type="checkbox" name="frequency" value="Sat" checked> Sat
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeHabitModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="saveHabitBtn">Update Habit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/habits.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</body>
+
+</html>

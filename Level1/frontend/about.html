@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="About Streaklet and its creators.">
+    <title>About | Streaklet</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
+    <style>
+        .about-card {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .about-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 24px;
+        }
+
+        .about-description {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-layout">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="navbar-container">
+                <a href="index.html" class="navbar-brand">
+                    <span class="logo-icon">🌿</span>
+                    <span>Streaklet</span>
+                </a>
+
+                <div class="navbar-nav">
+                    <a href="index.html" class="nav-link">Dashboard</a>
+                    <a href="habits.html" class="nav-link">My Habits</a>
+                    <a href="calendar.html" class="nav-link">Calendar</a>
+                    <a href="progress.html" class="nav-link">Progress</a>
+                    <a href="about.html" class="nav-link active">About</a>
+                    <a href="settings.html" class="nav-link">Settings</a>
+                </div>
+
+                <div class="navbar-actions">
+                    <div class="user-avatar" onclick="window.location.href='settings.html'" style="cursor: pointer;">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=streaklet" alt="User avatar">
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <!-- Page Header -->
+                <div class="page-greeting">
+                    <h1>About Streaklet 🌟</h1>
+                    <p>The story behind the habit tracker.</p>
+                </div>
+
+                <div class="card about-card">
+                    <img src="images/codveda.jpg" alt="Kanzy Hany X Codeveda" class="about-image">
+
+                    <h2 class="card-title">Kanzy Hany X Codeveda</h2>
+                    <p class="about-description">
+                        Streaklet is a project collaboration between Kanzy Hany and Codeveda, designed to help you build
+                        better habits and achieve your goals through consistency and smart insights.
+                    </p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+</body>
+
+</html>

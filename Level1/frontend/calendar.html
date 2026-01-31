@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streaklet - Calendar</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
+    <style>
+        .calendar-page-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: var(--space-xl);
+            align-items: start;
+        }
+
+        .calendar-sidebar {
+            background: var(--bg-white);
+            padding: var(--space-md);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 100px;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-xl);
+        }
+
+        .sidebar-section h3 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: var(--space-md);
+            font-weight: 700;
+        }
+
+        .calendar-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-xs);
+        }
+
+        .calendar-item {
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .calendar-item:hover {
+            background: var(--bg-cream);
+            color: var(--text-dark);
+        }
+
+        .calendar-item.active {
+            background: var(--primary-green-subtle);
+            color: var(--primary-green);
+        }
+
+        .calendar-container {
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--border-light);
+        }
+
+        .calendar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--space-lg);
+        }
+
+        .calendar-controls {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .month-display {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            min-width: 200px;
+            text-align: center;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: var(--border-light);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        .calendar-day-header {
+            background: var(--bg-cream-dark);
+            padding: var(--space-sm);
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .calendar-day {
+            background: var(--bg-white);
+            min-height: 120px;
+            padding: var(--space-sm);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            cursor: pointer;
+            transition: background var(--transition-fast);
+        }
+
+        .calendar-day:hover {
+            background: var(--bg-cream);
+        }
+
+        .day-number {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-full);
+        }
+
+        .calendar-day.today .day-number {
+            background: var(--primary-green);
+            color: white;
+        }
+
+        .habit-dot {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--text-dark);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        @media (max-width: 1024px) {
+            .calendar-page-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .calendar-sidebar {
+                position: static;
+                margin-bottom: var(--space-lg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-layout">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="navbar-container">
+                <a href="index.html" class="navbar-brand">
+                    <span class="logo-icon">🌿</span>
+                    <span>Streaklet</span>
+                </a>
+
+                <div class="navbar-nav">
+                    <a href="index.html" class="nav-link">Dashboard</a>
+                    <a href="habits.html" class="nav-link">My Habits</a>
+                    <a href="calendar.html" class="nav-link active">Calendar</a>
+                    <a href="progress.html" class="nav-link">Progress</a>
+                    <a href="about.html" class="nav-link">About</a>
+                    <a href="settings.html" class="nav-link">Settings</a>
+                </div>
+
+                <div class="navbar-actions">
+                    <div class="user-avatar" onclick="window.location.href='settings.html'" style="cursor: pointer;">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=streaklet" alt="User avatar">
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <div class="calendar-page-layout">
+                    <!-- Sidebar -->
+                    <aside class="calendar-sidebar">
+                        <div class="sidebar-section">
+                            <button class="btn btn-primary w-full" onclick="openModal('createCalendarModal')">+ Shared
+                                Calendar</button>
+                        </div>
+
+                        <div class="sidebar-section">
+                            <h3>Calendars</h3>
+                            <div class="calendar-list" id="calendarList">
+                                <div class="calendar-item active" data-id="personal">
+                                    <span>👤</span> My Calendar
+                                </div>
+                                <!-- Shared calendars will be injected here -->
+                            </div>
+                        </div>
+                    </aside>
+
+                    <!-- Main Grid -->
+                    <div class="calendar-main">
+                        <div class="page-greeting" style="padding: 0; margin-bottom: var(--space-lg);">
+                            <h1 id="calendarTitle">My Calendar</h1>
+                            <p id="calendarSubtitle">View your personal habit history</p>
+                        </div>
+
+                        <div class="calendar-container">
+                            <div class="calendar-header">
+                                <div class="calendar-controls">
+                                    <button class="btn btn-secondary btn-icon" id="prevMonth">‹</button>
+                                    <div class="month-display" id="monthDisplay">January 2026</div>
+                                    <button class="btn btn-secondary btn-icon" id="nextMonth">›</button>
+                                </div>
+                                <button class="btn btn-secondary" id="todayBtn">Today</button>
+                            </div>
+
+                            <div class="calendar-grid" id="calendarGrid">
+                                <div class="calendar-day-header">Sun</div>
+                                <div class="calendar-day-header">Mon</div>
+                                <div class="calendar-day-header">Tue</div>
+                                <div class="calendar-day-header">Wed</div>
+                                <div class="calendar-day-header">Thu</div>
+                                <div class="calendar-day-header">Fri</div>
+                                <div class="calendar-day-header">Sat</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Calendar Modal -->
+    <div id="createCalendarModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Create Shared Calendar</h3>
+                <button class="modal-close" onclick="closeModal('createCalendarModal')">&times;</button>
+            </div>
+            <form id="createCalendarForm">
+                <div class="form-group">
+                    <label class="form-label">Calendar Name</label>
+                    <input type="text" id="newCalendarName" class="form-input" placeholder="e.g. Family Habits"
+                        required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                        onclick="closeModal('createCalendarModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/calendar.js"></script>
+</body>
+
+</html>
