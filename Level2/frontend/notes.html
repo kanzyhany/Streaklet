@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habit Notes - Streaklet</title>
+    <link rel="stylesheet" href="css/styles.css?v=7">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .notes-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: var(--space-xl);
+            align-items: start;
+        }
+
+        .habits-sidebar {
+            background: var(--bg-white);
+            padding: var(--space-lg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+            position: sticky;
+            top: 20px;
+        }
+
+        .habit-filter-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-md);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            margin-bottom: var(--space-xs);
+            border: 1px solid transparent;
+        }
+
+        .habit-filter-item:hover {
+            background: var(--bg-cream);
+        }
+
+        .habit-filter-item.active {
+            background: var(--primary-green-subtle);
+            border-color: var(--primary-green);
+        }
+
+        .habit-filter-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .habit-filter-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .notes-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-lg);
+        }
+
+        .timeline-date-group {
+            position: relative;
+            padding-left: var(--space-xl);
+        }
+
+        .timeline-date-group::before {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border-light);
+        }
+
+        .timeline-date-header {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: var(--space-md);
+            position: relative;
+        }
+
+        .timeline-date-header::before {
+            content: '';
+            position: absolute;
+            left: -25px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            background: var(--bg-cream);
+            border: 2px solid var(--text-muted);
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .timeline-note-card {
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: var(--space-md);
+        }
+
+        .note-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-md);
+            padding-bottom: var(--space-sm);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .note-habit-badge {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+        }
+
+        @media (max-width: 768px) {
+            .notes-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .habits-sidebar {
+                position: static;
+                margin-bottom: var(--space-lg);
+                max-height: 200px;
+                overflow-y: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-layout">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="navbar-container">
+                <a href="index.html" class="navbar-brand">
+                    <span class="logo-icon">🌿</span>
+                    <span>Streaklet</span>
+                </a>
+
+                <div class="navbar-nav">
+                    <a href="index.html" class="nav-link">Dashboard</a>
+                    <a href="calendar.html" class="nav-link">Calendar</a>
+                    <a href="habits.html" class="nav-link">My Habits</a>
+                    <a href="progress.html" class="nav-link">Progress</a>
+                    <a href="about.html" class="nav-link">About</a>
+                    <a href="settings.html" class="nav-link">Settings</a>
+                </div>
+
+                <div class="navbar-actions">
+                    <!-- Notification Bell -->
+                    <div class="notification-wrapper" id="notificationWrapper">
+                        <button class="notification-bell" id="notificationBell" onclick="toggleNotificationPanel()"
+                            title="Notifications">
+                            <span class="bell-icon">🔔</span>
+                            <span class="notification-badge hidden" id="notificationBadge">0</span>
+                        </button>
+
+                        <div class="notification-panel hidden" id="notificationPanel">
+                            <div class="notification-header">
+                                <h4>Notifications</h4>
+                                <button class="btn-link" onclick="markAllAsRead()">Mark all read</button>
+                            </div>
+                            <div class="notification-list" id="notificationList"></div>
+                        </div>
+                    </div>
+
+                    <div class="navbar-dropdown">
+                        <button class="btn-menu" title="Menu" onclick="toggleMobileMenu()">
+                            <span>•••</span>
+                        </button>
+                        <div class="dropdown-menu" id="navbarDropdownMenu">
+                            <a href="settings.html" class="dropdown-item">
+                                <span>⚙️</span> Settings
+                            </a>
+                            <button class="dropdown-item logout" onclick="api.logout()">
+                                <span>🚪</span> Logout
+                            </button>
+                        </div>
+                    </div>
+                    <div class="user-avatar">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=streaklet" alt="User avatar">
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h1>Habit Notes 📝</h1>
+                        <p class="subtitle">Reflect on your journey and track your thoughts</p>
+                    </div>
+                    <a href="habits.html" class="btn btn-secondary"
+                        style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-arrow-left"></i> Back to My Habits
+                    </a>
+                </div>
+
+                <div class="notes-layout">
+                    <!-- Sidebar: Habit Filter -->
+                    <aside class="habits-sidebar">
+                        <h3 style="margin-bottom: var(--space-md); font-size: 1rem;">Filter by Habit</h3>
+                        <div id="habitFilterList">
+                            <!-- Filters injected here -->
+                            <div class="habit-filter-item active" data-id="all">
+                                <div class="habit-filter-icon" style="background: var(--bg-cream);">🌎</div>
+                                <span class="habit-filter-name">All Habits</span>
+                            </div>
+                        </div>
+                    </aside>
+
+                    <!-- Main: Notes Timeline -->
+                    <div class="notes-timeline" id="notesTimeline">
+                        <!-- Notes injected here -->
+                        <div class="empty-state">
+                            <div class="loading-spinner" style="margin: 0 auto;"></div>
+                            <p style="margin-top: 10px;">Loading notes...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js?v=7"></script>
+    <script src="js/notifications.js?v=7"></script>
+    <script src="js/notes.js?v=1"></script>
+</body>
+
+</html>

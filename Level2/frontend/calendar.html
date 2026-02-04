@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streaklet - Calendar</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
+    <style>
+        .calendar-page-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: var(--space-xl);
+            align-items: start;
+        }
+
+        .calendar-sidebar {
+            background: var(--bg-white);
+            padding: var(--space-md);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 100px;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-xl);
+        }
+
+        .sidebar-section h3 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: var(--space-md);
+            font-weight: 700;
+        }
+
+        /* Calendar List */
+        .calendar-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-xs);
+        }
+
+        .calendar-item {
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .calendar-item:hover {
+            background: var(--bg-cream);
+            color: var(--text-dark);
+        }
+
+        .calendar-item.active {
+            background: var(--primary-green-subtle);
+            color: var(--primary-green);
+        }
+
+        /* Members List */
+        .members-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+
+        .member-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .member-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-full);
+            background: var(--bg-cream-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .member-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .member-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .member-role {
+            font-size: 0.75rem;
+            color: var(--primary-green);
+            font-weight: 600;
+        }
+
+        /* Dropdown Button */
+        .dropdown {
+            position: relative;
+            width: 100%;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: white;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md);
+            z-index: 10;
+            margin-top: 4px;
+        }
+
+        .dropdown-content.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: var(--space-sm) var(--space-md);
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .dropdown-item:hover {
+            background: var(--bg-cream);
+        }
+
+        /* Existing Styles */
+        .calendar-container {
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--border-light);
+        }
+
+        .calendar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--space-lg);
+        }
+
+        .calendar-controls {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .month-display {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            min-width: 200px;
+            text-align: center;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: var(--border-light);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        .calendar-day-header {
+            background: var(--bg-cream-dark);
+            padding: var(--space-sm);
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .calendar-day {
+            background: var(--bg-white);
+            min-height: 120px;
+            padding: var(--space-sm);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            cursor: pointer;
+            transition: background var(--transition-fast);
+            position: relative;
+        }
+
+        .calendar-day:hover {
+            background: var(--bg-cream);
+        }
+
+        .calendar-day.today {
+            background: rgba(74, 124, 89, 0.05);
+        }
+
+        .day-number {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-full);
+        }
+
+        .calendar-day.today .day-number {
+            background: var(--primary-green);
+            color: white;
+        }
+
+        .calendar-day.other-month {
+            background: var(--bg-cream);
+            color: var(--text-light);
+        }
+
+        .calendar-day.other-month .day-number {
+            color: var(--text-light);
+        }
+
+        .day-habits {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            flex: 1;
+        }
+
+        .habit-dot {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--text-dark);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .habit-dot.done {
+            background: rgba(74, 124, 89, 0.2);
+            color: var(--primary-green-dark);
+        }
+
+        .habit-dot.missed {
+            background: rgba(217, 75, 61, 0.2);
+            color: var(--accent-red);
+            text-decoration: line-through;
+        }
+
+        .habit-dot.pending {
+            background: var(--bg-cream-dark);
+            color: var(--text-muted);
+        }
+
+        .more-indicator {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: auto;
+            padding-top: 2px;
+        }
+
+        @media (max-width: 1024px) {
+            .calendar-page-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .calendar-sidebar {
+                position: static;
+                margin-bottom: var(--space-lg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-layout">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="navbar-container">
+                <a href="index.html" class="navbar-brand">
+                    <span class="logo-icon">🌿</span>
+                    <span>Streaklet</span>
+                </a>
+
+                <div class="navbar-nav">
+                    <a href="index.html" class="nav-link">Dashboard</a>
+                    <a href="calendar.html" class="nav-link active">Calendar</a>
+                    <a href="habits.html" class="nav-link">My Habits</a>
+                    <a href="progress.html" class="nav-link">Progress</a>
+                    <a href="about.html" class="nav-link">About</a>
+                    <a href="settings.html" class="nav-link">Settings</a>
+                </div>
+
+                <div class="navbar-actions">
+                    <!-- Notification Bell -->
+                    <div class="notification-wrapper" id="notificationWrapper">
+                        <button class="notification-bell" id="notificationBell" onclick="toggleNotificationPanel()"
+                            title="Notifications">
+                            <span class="bell-icon">🔔</span>
+                            <span class="notification-badge hidden" id="notificationBadge">0</span>
+                        </button>
+
+                        <div class="notification-panel hidden" id="notificationPanel">
+                            <div class="notification-header">
+                                <h4>Notifications</h4>
+                                <button class="btn-link" onclick="markAllAsRead()">Mark all read</button>
+                            </div>
+                            <div class="notification-list" id="notificationList"></div>
+                        </div>
+                    </div>
+
+                    <div class="navbar-dropdown">
+                        <button class="btn-menu" title="Menu" onclick="toggleMobileMenu()">
+                            <span>•••</span>
+                        </button>
+                        <div class="dropdown-menu" id="navbarDropdownMenu">
+                            <a href="settings.html" class="dropdown-item">
+                                <span>⚙️</span> Settings
+                            </a>
+                            <button class="dropdown-item logout" onclick="api.logout()">
+                                <span>🚪</span> Logout
+                            </button>
+                        </div>
+                    </div>
+                    <div class="user-avatar">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=streaklet" alt="User avatar">
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <div class="calendar-page-layout">
+                    <!-- Sidebar -->
+                    <aside class="calendar-sidebar">
+                        <div class="sidebar-section">
+                            <div class="dropdown">
+                                <button class="btn btn-primary w-full" id="calendarActionBtn">+ Calendar</button>
+                                <div class="dropdown-content" id="calendarDropdown">
+                                    <div class="dropdown-item" onclick="openModal('createCalendarModal')">Create Shared
+                                        Calendar</div>
+                                    <div class="dropdown-item" onclick="openModal('joinCalendarModal')">Add Shared
+                                        Calendar</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sidebar-section">
+                            <h3>Calendars</h3>
+                            <div class="calendar-list" id="calendarList">
+                                <div class="calendar-item active" data-type="all" data-id="all"
+                                    style="justify-content: space-between;">
+                                    <div style="display: flex; align-items: center; gap: var(--space-sm);">
+                                        <span>🌎</span> All Calendars
+                                    </div>
+                                    <button id="openFilterBtn"
+                                        style="background: none; border: none; cursor: pointer; padding: 2px; display: flex; align-items: center; opacity: 0.6; transition: opacity 0.2s;"
+                                        title="Filter Calendars">⚙️</button>
+                                </div>
+                                <div class="calendar-item" data-type="personal" data-id="personal">
+                                    <span>👤</span> My Calendar
+                                </div>
+                                <!-- Shared calendars will be injected here -->
+                            </div>
+                        </div>
+
+                        <div class="sidebar-section" id="graceSection">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-sm);">
+                                <h3 style="margin: 0;">✨ Rewards</h3>
+                                <div id="graceActiveIndicator" class="hidden"
+                                    style="background: var(--accent-orange); color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; display: flex; align-items: center; gap: 4px;">
+                                    🛡️ ACTIVE
+                                </div>
+                            </div>
+                            <div
+                                style="padding: var(--space-md); background: linear-gradient(135deg, rgba(74, 124, 89, 0.1), rgba(74, 124, 89, 0.05)); border-radius: var(--radius-md); border: 1px solid rgba(74, 124, 89, 0.2);">
+                                <div style="margin-bottom: var(--space-md);">
+                                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">
+                                        POINTS</div>
+                                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-green);"
+                                        id="pointsDisplay">0/10</div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">to next
+                                        grace day</div>
+                                </div>
+                                <div style="margin-bottom: var(--space-md);">
+                                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">GRACE
+                                        DAYS</div>
+                                    <div style="font-size: 1.25rem; font-weight: 700; color: var(--primary-green);"
+                                        id="graceDaysDisplay">0</div>
+                                </div>
+                                <button class="btn btn-primary w-full" id="useGraceDayBtn" style="font-size: 0.9rem;">
+                                    🛡️ Use Grace Day
+                                </button>
+                                <a href="streaks-help.html" class="btn btn-secondary w-full"
+                                    style="font-size: 0.85rem; margin-top: var(--space-sm); text-decoration: none; text-align: center; display: block;">
+                                    ℹ️ Explain Streaks
+                                </a>
+                                <div
+                                    style="font-size: 0.7rem; color: var(--text-muted); margin-top: var(--space-sm); text-align: center;">
+                                    Protect today's streaks
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sidebar-section hidden" id="membersSection">
+                            <h3>Calendar Members</h3>
+                            <div class="members-list" id="membersList">
+                                <!-- Members will be injected here -->
+                            </div>
+                            <div id="joinCodeDisplay"
+                                style="margin-top: var(--space-lg); padding: var(--space-md); background: var(--bg-cream); border-radius: var(--radius-md); text-align: center;">
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">JOIN CODE
+                                </div>
+                                <div id="currentJoinCode"
+                                    style="font-family: monospace; font-size: 1.25rem; font-weight: 700; color: var(--primary-green);">
+                                    AAAA-BBBB</div>
+                            </div>
+                            <button id="deleteCalendarBtn" class="btn btn-secondary w-full hidden"
+                                style="margin-top: var(--space-md); color: var(--accent-red); border-color: var(--accent-red-subtle);">
+                                🗑️ Delete Calendar
+                            </button>
+                        </div>
+                    </aside>
+
+                    <!-- Main Grid -->
+                    <div class="calendar-main">
+                        <div class="page-greeting" style="padding: 0; margin-bottom: var(--space-lg);">
+                            <h1 id="calendarTitle">My Calendar</h1>
+                            <p id="calendarSubtitle">View your personal habit history</p>
+                        </div>
+
+                        <div class="calendar-container">
+                            <div class="calendar-header">
+                                <div class="calendar-controls">
+                                    <button class="btn btn-secondary btn-icon" id="prevMonth">‹</button>
+                                    <div class="month-display" id="monthDisplay">January 2026</div>
+                                    <button class="btn btn-secondary btn-icon" id="nextMonth">›</button>
+                                </div>
+                                <button class="btn btn-secondary" id="todayBtn">Today</button>
+                            </div>
+
+                            <div class="calendar-grid" id="calendarGrid">
+                                <!-- Headers -->
+                                <div class="calendar-day-header">Sun</div>
+                                <div class="calendar-day-header">Mon</div>
+                                <div class="calendar-day-header">Tue</div>
+                                <div class="calendar-day-header">Wed</div>
+                                <div class="calendar-day-header">Thu</div>
+                                <div class="calendar-day-header">Fri</div>
+                                <div class="calendar-day-header">Sat</div>
+
+                                <!-- Days will be populated by JS -->
+                            </div>
+
+                            <!-- Day View (Hidden by default) -->
+                            <div id="dayView" class="hidden">
+                                <div class="day-view-header"
+                                    style="display: flex; flex-direction: column; gap: var(--space-md); margin-bottom: var(--space-md);">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <button class="btn btn-secondary btn-icon" id="backToMonth">‹ Back</button>
+                                        <div style="display: flex; gap: var(--space-sm);">
+                                            <button class="btn btn-primary btn-icon" id="addHabitToDay"
+                                                title="Add Habit to this Day">+</button>
+                                        </div>
+                                    </div>
+
+                                    <div
+                                        style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-card); padding: var(--space-md); border-radius: var(--radius-md); border: 1px solid var(--border-light);box-shadow: var(--shadow-sm);">
+                                        <button class="btn btn-secondary btn-icon" id="prevDayBtn"
+                                            title="Previous Day">‹</button>
+                                        <h2 id="dayViewDate" style="margin: 0; font-size: 1.1rem; text-align: center;">
+                                            Date</h2>
+                                        <button class="btn btn-secondary btn-icon" id="nextDayBtn"
+                                            title="Next Day">›</button>
+                                    </div>
+                                </div>
+                                <div class="day-view-content" id="dayViewContent">
+                                    <!-- Habits list -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Calendar Modal -->
+    <div id="createCalendarModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Create Shared Calendar</h3>
+                <button class="modal-close" onclick="closeModal('createCalendarModal')">&times;</button>
+            </div>
+            <form id="createCalendarForm">
+                <div class="form-group">
+                    <label class="form-label">Calendar Name</label>
+                    <input type="text" id="newCalendarName" class="form-input" placeholder="e.g. Family Habits"
+                        required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                        onclick="closeModal('createCalendarModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Calendar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Join Calendar Modal -->
+    <div id="joinCalendarModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Add Shared Calendar</h3>
+                <button class="modal-close" onclick="closeModal('joinCalendarModal')">&times;</button>
+            </div>
+            <form id="joinCalendarForm">
+                <div class="form-group">
+                    <label class="form-label">Join Code</label>
+                    <input type="text" id="joinCalendarCode" class="form-input" placeholder="e.g. A1B2C3D4"
+                        maxlength="8" required style="text-transform: uppercase;">
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Enter the 8-character code
+                        shared with you.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                        onclick="closeModal('joinCalendarModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Join Calendar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Habit Modal -->
+    <div id="habitModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Add Habit</h3>
+                <button class="modal-close" onclick="closeModal('habitModal')">&times;</button>
+            </div>
+            <form id="habitForm">
+                <div class="form-group">
+                    <label class="form-label" for="habitTitle">Habit Name</label>
+                    <input type="text" id="habitTitle" class="form-input" placeholder="e.g. Daily Sync" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="habitCategory">Category</label>
+                    <select id="habitCategory" class="form-input form-select">
+                        <option value="Health">Health</option>
+                        <option value="Learning">Learning</option>
+                        <option value="Mindfulness">Mindfulness</option>
+                        <option value="Wellness">Wellness</option>
+                        <option value="Productivity">Productivity</option>
+                        <option value="Social">Social</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="habitCalendar">Calendar</label>
+                    <select id="habitCalendar" class="form-input form-select">
+                        <option value="personal">👤 My Calendar (Personal)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Frequency Type</label>
+                    <div class="flex gap-sm" style="margin-bottom: 12px; flex-wrap: wrap;">
+                        <label class="frequency-type-option selected" data-type="weekly"
+                            style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: rgba(74, 124, 89, 0.1); border-radius: 10px; cursor: pointer; border: 2px solid var(--primary-green); transition: all 0.2s;">
+                            <input type="radio" name="frequencyType" value="weekly" checked style="display: none;">
+                            <span>Weekly</span>
+                        </label>
+                        <label class="frequency-type-option" data-type="yearly"
+                            style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--bg-cream); border-radius: 10px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;">
+                            <input type="radio" name="frequencyType" value="yearly" style="display: none;">
+                            <span>Yearly</span>
+                        </label>
+                        <label class="frequency-type-option" data-type="one-time"
+                            style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--bg-cream); border-radius: 10px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;">
+                            <input type="radio" name="frequencyType" value="one-time" style="display: none;">
+                            <span>One-Time</span>
+                        </label>
+                    </div>
+                    <div id="weeklyFrequencyGroup">
+                        <label class="form-label">Days</label>
+                        <div class="flex gap-xs" style="flex-wrap: wrap;">
+                            <label><input type="checkbox" name="frequency" value="Sun" checked> Sun</label>
+                            <label><input type="checkbox" name="frequency" value="Mon" checked> Mon</label>
+                            <label><input type="checkbox" name="frequency" value="Tue" checked> Tue</label>
+                            <label><input type="checkbox" name="frequency" value="Wed" checked> Wed</label>
+                            <label><input type="checkbox" name="frequency" value="Thu" checked> Thu</label>
+                            <label><input type="checkbox" name="frequency" value="Fri" checked> Fri</label>
+                            <label><input type="checkbox" name="frequency" value="Sat" checked> Sat</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Icon</label>
+                    <select id="habitIcon" class="form-input form-select">
+                        <option value="🎯">🎯 Target</option>
+                        <option value="💪">💪 Workout</option>
+                        <option value="📚">📚 Reading</option>
+                        <option value="🧘">🧘 Meditation</option>
+                        <option value="💧">💧 Water</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Color Swatch</label>
+                    <input type="color" id="habitColor" class="form-input" value="#4A7C59" style="height: 45px;">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('habitModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Habit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Calendar Filter Modal -->
+    <div id="calendarFilterModal" class="modal-overlay">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Filter Calendars</h3>
+                <button class="modal-close" onclick="closeModal('calendarFilterModal')">&times;</button>
+            </div>
+            <div style="padding: var(--space-lg);">
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: var(--space-md);">
+                    Choose which calendars to show in the "All Calendars" view.
+                </p>
+                <div id="calendarFilterList" style="display: flex; flex-direction: column; gap: var(--space-sm);">
+                    <!-- Filter items injected here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary w-full"
+                    onclick="closeModal('calendarFilterModal')">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteCalendarModal" class="modal-overlay">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Delete Calendar</h3>
+                <button class="modal-close" onclick="closeModal('deleteCalendarModal')">&times;</button>
+            </div>
+            <div style="padding: var(--space-lg); text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: var(--space-md);">⚠️</div>
+                <h4 style="margin-bottom: var(--space-sm); color: var(--text-dark);">Are you sure?</h4>
+                <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5;">
+                    Are you sure you want to delete <strong id="deleteCalendarName"
+                        style="color: var(--text-dark);">"Calendar Name"</strong>?
+                    This will permanently delete all habits and logs for this calendar.
+                    <br><br>
+                    <span style="color: var(--accent-red); font-weight: 600;">THIS CANNOT BE UNDONE.</span>
+                </p>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: var(--space-sm);">
+                <button type="button" class="btn btn-secondary w-full"
+                    onclick="closeModal('deleteCalendarModal')">Cancel</button>
+                <button type="button" class="btn btn-primary w-full" id="confirmDeleteCalendarBtn"
+                    style="background: var(--accent-red); border-color: var(--accent-red);">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js?v=11"></script>
+    <script src="js/notifications.js?v=11"></script>
+    <script src="js/calendar.js?v=11"></script>
+</body>
+
+</html>

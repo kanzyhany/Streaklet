@@ -1,0 +1,748 @@
+/**
+ * Streaklet Dashboard
+ * Main dashboard functionality
+ */
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Auth guard
+    if (!requireAuth()) return;
+
+    // Initialize dashboard
+    initDashboard();
+});
+
+async function initDashboard() {
+    // Set greeting
+    setGreeting();
+
+    // Setup frequency toggle listeners early to ensure they work
+    setupFrequencyToggleListeners();
+
+    // Load user info
+    loadUserInfo();
+
+    // Load data
+    await Promise.all([
+        loadTodaysHabits(),
+        loadStreakStats(),
+        loadGraceStatus(),
+        loadTodayProgress(),
+        loadWeeklyOverview(),
+        loadCalendars(),
+        initNotifications()
+    ]);
+
+    // Setup event listeners
+    setupEventListeners();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Greeting
+// ═══════════════════════════════════════════════════════════════
+
+function setGreeting() {
+    const greetingEl = document.getElementById('greeting');
+    const user = api.getUser();
+    const hour = new Date().getHours();
+
+    let greeting = 'Good evening';
+    if (hour < 12) greeting = 'Good morning';
+    else if (hour < 17) greeting = 'Good afternoon';
+
+    const firstName = user?.name?.split(' ')[0] || 'there';
+    greetingEl.textContent = `${greeting}, ${firstName} 👋`;
+}
+
+function loadUserInfo() {
+    const user = api.getUser();
+    const avatarEl = document.querySelector('.user-avatar img');
+
+    if (avatarEl && user) {
+        // Use initials or default avatar
+        avatarEl.alt = user.name;
+        // You can add profile picture support here
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Today's Habits
+// ═══════════════════════════════════════════════════════════════
+
+async function loadTodaysHabits() {
+    const container = document.getElementById('habitsList');
+    if (!container) return;
+
+    try {
+        const response = await api.getTodaysHabits();
+
+        if (response.success && response.data.length > 0) {
+            const sharedCompletions = response.sharedCompletions || {};
+            container.innerHTML = response.data.map(habit => createHabitCard(habit, sharedCompletions)).join('');
+            attachHabitListeners();
+        } else {
+            container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">🎯</div>
+          <h3>No habits for today</h3>
+          <p>Create your first habit to start building streaks!</p>
+          <button class="btn btn-primary" onclick="openCreateHabitModal()">
+            + Create Habit
+          </button>
+        </div>
+      `;
+        }
+    } catch (error) {
+        console.error('Error loading habits:', error);
+        container.innerHTML = `
+      <div class="empty-state">
+        <p>Failed to load habits. Please try again.</p>
+        <button class="btn btn-secondary" onclick="loadTodaysHabits()">Retry</button>
+      </div>
+    `;
+    }
+}
+
+function createHabitCard(habit, completions = {}) {
+    const status = habit.todayStatus || 'pending';
+    const statusBadge = getStatusBadge(status, habit.reminderTime);
+    const categoryClass = habit.category.toLowerCase();
+    const hasNote = habit.todayNotes && habit.todayNotes.trim().length > 0;
+
+    return `
+    <div class="habit-card-wrapper" data-habit-id="${habit._id}">
+      <div class="habit-card" data-habit-id="${habit._id}" data-status="${status}">
+        <div class="habit-icon ${categoryClass}">
+          ${habit.icon || '🎯'}
+        </div>
+        <div class="habit-info">
+          <div class="habit-title">${escapeHtml(habit.title)}</div>
+          <div class="habit-category">${habit.category}</div>
+          ${(() => {
+            const others = completions[habit._id] || [];
+            if (others && others.length > 0) {
+                const namesText = others.length > 3
+                    ? others.slice(0, 3).join(', ') + ` and ${others.length - 3} more`
+                    : others.join(', ');
+                return `<div class="shared-completions" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; font-style: italic;">
+                    <span title="${others.join(', ')}">✅ Done: ${namesText}</span>
+                </div>`;
+            }
+            return '';
+        })()}
+        </div>
+        <div class="habit-status">
+          ${statusBadge}
+          <div class="habit-actions">
+            <button 
+              class="btn-note ${hasNote ? 'active' : ''}" 
+              title="${status === 'done' ? 'Add a note' : 'Complete habit to add a note'}" 
+              onclick="toggleNoteArea('${habit._id}')"
+              ${status !== 'done' ? 'disabled' : ''}
+            >
+              <span>📝</span>
+            </button>
+            <button class="status-action" title="More options">
+              <span>›</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="habit-note-area ${hasNote ? 'visible' : ''}" id="noteArea-${habit._id}">
+        <textarea placeholder="How did it go? (optional)" class="note-input" id="noteInput-${habit._id}">${escapeHtml(habit.todayNotes || '')}</textarea>
+        <button class="btn-save-note" onclick="saveHabitNote('${habit._id}')">Save Reflection</button>
+      </div>
+    </div>
+  `;
+}
+
+function toggleNoteArea(habitId) {
+    const card = document.querySelector(`.habit-card[data-habit-id="${habitId}"]`);
+    if (card && card.dataset.status !== 'done') return;
+
+    const area = document.getElementById(`noteArea-${habitId}`);
+    if (area) {
+        area.classList.toggle('visible');
+        if (area.classList.contains('visible')) {
+            area.querySelector('textarea').focus();
+        }
+    }
+}
+
+async function saveHabitNote(habitId) {
+    const noteInput = document.getElementById(`noteInput-${habitId}`);
+    const note = noteInput.value;
+    const saveBtn = noteInput.nextElementSibling;
+    const card = document.querySelector(`.habit-card-wrapper[data-habit-id="${habitId}"] .habit-card`);
+    const status = card.dataset.status;
+
+    try {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+
+        const response = await api.logHabit(habitId, status, note);
+
+        if (response.success) {
+            saveBtn.textContent = 'Saved! ✓';
+            saveBtn.classList.add('success');
+
+            // Update the note button icon
+            const noteBtn = document.querySelector(`.habit-card-wrapper[data-habit-id="${habitId}"] .btn-note`);
+            if (note.trim().length > 0) {
+                noteBtn.classList.add('active');
+            } else {
+                noteBtn.classList.remove('active');
+            }
+
+            setTimeout(() => {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Reflection';
+                saveBtn.classList.remove('success');
+            }, 2000);
+        }
+    } catch (error) {
+        console.error('Error saving note:', error);
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Failed to save';
+    }
+}
+
+function getStatusBadge(status, reminderTime) {
+    switch (status) {
+        case 'done':
+            return '<span class="status-badge done">Done! ✓</span>';
+        case 'in_progress':
+            return '<span class="status-badge in-progress">In Progress ›</span>';
+        case 'missed':
+            return '<span class="status-badge missed">Missed ›</span>';
+        case 'skipped':
+            return '<span class="status-badge skipped">Skipped</span>';
+        case 'pending':
+        default:
+            const now = new Date();
+            const [hours, minutes] = (reminderTime || '18:00').split(':');
+            const reminderDate = new Date();
+            reminderDate.setHours(parseInt(hours), parseInt(minutes), 0);
+
+            if (now < reminderDate) {
+                return `<span class="status-badge upcoming">Upcoming ${reminderTime} 🕐</span>`;
+            }
+            return '<span class="status-badge pending">Pending ›</span>';
+    }
+}
+
+function attachHabitListeners() {
+    const habitCards = document.querySelectorAll('.habit-card');
+
+    habitCards.forEach(card => {
+        card.addEventListener('click', (e) => {
+            const habitId = card.dataset.habitId;
+            const currentStatus = card.dataset.status;
+
+            // If clicking the action button, show menu
+            if (e.target.closest('.status-action')) {
+                showHabitMenu(habitId, card);
+                return;
+            }
+
+            // Ignore clicks inside the menu
+            if (e.target.closest('.habit-menu')) return;
+
+            // REMOVED: Quick toggle on card click
+            // Users must now use the menu to mark as done
+        });
+    });
+}
+
+async function updateHabitStatus(habitId, status) {
+    try {
+        const response = await api.logHabit(habitId, status);
+
+        if (response.success) {
+            // Refresh all data
+            await Promise.all([
+                loadTodaysHabits(),
+                loadStreakStats(),
+                loadTodayProgress(),
+                loadWeeklyOverview()
+            ]);
+        }
+    } catch (error) {
+        console.error('Error updating habit:', error);
+        alert(`Failed to update habit: ${error.message || 'Please try again.'}`);
+    }
+}
+
+function showHabitMenu(habitId, cardElement) {
+    // Remove any existing menu
+    const existingMenu = document.querySelector('.habit-menu');
+    if (existingMenu) existingMenu.remove();
+
+    const menu = document.createElement('div');
+    menu.className = 'habit-menu';
+    menu.innerHTML = `
+    <button class="menu-item" onclick="updateHabitStatus('${habitId}', 'done')">
+      ✓ Mark Done
+    </button>
+    <button class="menu-item" onclick="updateHabitStatus('${habitId}', 'in_progress')">
+      ⏳ In Progress
+    </button>
+    <button class="menu-item" onclick="updateHabitStatus('${habitId}', 'skipped')">
+      ⏭ Skip Today
+    </button>
+    <hr class="menu-divider">
+    <button class="menu-item" onclick="editHabit('${habitId}')">
+      ✏️ Edit Habit
+    </button>
+  `;
+
+    cardElement.classList.add('relative');
+    cardElement.appendChild(menu);
+
+    // Close menu when clicking outside
+    setTimeout(() => {
+        document.addEventListener('click', function closeMenu(e) {
+            if (!menu.contains(e.target)) {
+                menu.remove();
+                cardElement.classList.remove('relative');
+                document.removeEventListener('click', closeMenu);
+            }
+        });
+    }, 0);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Streak Stats
+// ═══════════════════════════════════════════════════════════════
+
+async function loadStreakStats() {
+    const currentStreakEl = document.getElementById('currentStreak');
+    const longestStreakEl = document.getElementById('longestStreak');
+    const missedAlertEl = document.getElementById('missedAlert');
+
+    try {
+        const [streakResponse, todayResponse] = await Promise.all([
+            api.getStreakStats(),
+            api.getTodayStats()
+        ]);
+
+        if (streakResponse.success) {
+            currentStreakEl.querySelector('h3').textContent = `${streakResponse.data.currentStreak} Days`;
+            longestStreakEl.querySelector('h3').textContent = `${streakResponse.data.longestStreak} Days`;
+
+            // Update habit names
+            const currentHabitEl = document.getElementById('currentStreakHabit');
+            const longestHabitEl = document.getElementById('longestStreakHabit');
+
+            if (currentHabitEl) {
+                currentHabitEl.textContent = streakResponse.data.currentStreakHabit || '';
+            }
+            if (longestHabitEl) {
+                longestHabitEl.textContent = streakResponse.data.longestStreakHabit || '';
+            }
+        }
+
+        if (todayResponse.success && todayResponse.data.missedHabits > 0) {
+            missedAlertEl.classList.remove('hidden');
+            missedAlertEl.querySelector('.missed-count').textContent = todayResponse.data.missedHabits;
+            missedAlertEl.querySelector('.missed-text span').textContent =
+                `${todayResponse.data.missedHabits} task${todayResponse.data.missedHabits > 1 ? 's' : ''} missed today`;
+        } else {
+            missedAlertEl.classList.add('hidden');
+        }
+    } catch (error) {
+        console.error('Error loading streak stats:', error);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Today's Progress
+// ═══════════════════════════════════════════════════════════════
+
+async function loadTodayProgress() {
+    const progressEl = document.getElementById('progressPercentage');
+    const ringEl = document.getElementById('progressRing');
+
+    try {
+        const response = await api.getTodayStats();
+
+        if (response.success) {
+            const percentage = response.data.completionPercentage;
+            progressEl.textContent = `${percentage}%`;
+
+            // Update SVG ring
+            if (ringEl) {
+                const circle = ringEl.querySelector('.progress-ring-fill');
+                const radius = circle.r.baseVal.value;
+                const circumference = 2 * Math.PI * radius;
+                const offset = circumference - (percentage / 100) * circumference;
+
+                circle.style.strokeDasharray = circumference;
+                circle.style.strokeDashoffset = offset;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading progress:', error);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Weekly Overview
+// ═══════════════════════════════════════════════════════════════
+
+async function loadWeeklyOverview() {
+    const chartContainer = document.getElementById('weeklyChart');
+    const perfectDaysEl = document.getElementById('perfectDays');
+
+    try {
+        const response = await api.getWeeklyStats();
+
+        if (response.success && chartContainer) {
+            const { dailyStats, perfectDays } = response.data;
+
+            // Update chart bars
+            const bars = chartContainer.querySelectorAll('.chart-bar');
+            dailyStats.forEach((day, index) => {
+                if (bars[index]) {
+                    const fillEl = bars[index].querySelector('.bar-fill');
+                    const checkEl = bars[index].querySelector('.bar-check');
+
+                    // Scale height (max 100px)
+                    const height = Math.max(8, (day.percentage / 100) * 100);
+                    fillEl.style.height = `${height}px`;
+
+                    // Show checkmark for perfect days
+                    checkEl.textContent = day.isPerfectDay ? '✓' : '';
+                }
+            });
+
+            // Update perfect days count
+            if (perfectDaysEl) {
+                perfectDaysEl.innerHTML = `<strong>${perfectDays}</strong> Perfect Days this week!`;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading weekly overview:', error);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Create Habit Modal
+// ═══════════════════════════════════════════════════════════════
+
+function openCreateHabitModal() {
+    const modal = document.getElementById('habitModal');
+    if (modal) {
+        modal.classList.add('show');
+        document.getElementById('habitForm').reset();
+        document.getElementById('habitForm').dataset.habitId = '';
+        document.getElementById('modalTitle').textContent = 'Create New Habit';
+
+        // Reset frequency type to weekly
+        document.querySelectorAll('.frequency-type-option').forEach(opt => {
+            opt.classList.remove('selected');
+            opt.style.borderColor = 'transparent';
+            opt.style.background = 'var(--bg-cream)';
+            if (opt.dataset.type === 'weekly') {
+                opt.classList.add('selected');
+                opt.style.borderColor = 'var(--primary)';
+                opt.style.background = 'rgba(74, 124, 89, 0.1)';
+                opt.querySelector('input').checked = true;
+            }
+        });
+        document.getElementById('weeklyFrequencyGroup').style.display = 'block';
+        document.getElementById('yearlyFrequencyGroup').style.display = 'none';
+        document.getElementById('oneTimeFrequencyGroup').style.display = 'none';
+        document.getElementById('specificDate').value = '';
+
+        // Reset all checkboxes to checked
+        document.querySelectorAll('input[name="frequency"]').forEach(cb => cb.checked = true);
+
+        // Reset calendar selection to personal
+        const calendarSelect = document.getElementById('habitCalendar');
+        if (calendarSelect) calendarSelect.value = 'personal';
+    }
+}
+
+async function loadCalendars() {
+    const calendarSelect = document.getElementById('habitCalendar');
+    if (!calendarSelect) return;
+
+    try {
+        const response = await api.getSharedCalendars();
+        if (response.success && response.data.length > 0) {
+            // Keep personal option and add shared calendars
+            const personalOption = '<option value="personal">👤 My Calendar (Personal)</option>';
+            const sharedOptions = response.data.map(cal =>
+                `<option value="${cal._id}">📅 ${cal.name}</option>`
+            ).join('');
+            calendarSelect.innerHTML = personalOption + sharedOptions;
+        }
+    } catch (error) {
+        console.error('Error loading calendars:', error);
+    }
+}
+
+function closeHabitModal() {
+    const modal = document.getElementById('habitModal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+}
+
+async function saveHabit(e) {
+    e.preventDefault();
+
+    const form = document.getElementById('habitForm');
+    const habitId = form.dataset.habitId;
+    const frequencyType = document.querySelector('input[name="frequencyType"]:checked')?.value || 'weekly';
+
+    const habitData = {
+        title: document.getElementById('habitTitle').value.trim(),
+        category: document.getElementById('habitCategory').value,
+        frequencyType: frequencyType,
+        reminderTime: document.getElementById('habitReminder').value,
+        icon: document.getElementById('habitIcon').value || '🎯',
+        color: document.getElementById('habitColor').value || '#4A7C59'
+    };
+
+    // Set frequency or yearly date based on type
+    if (frequencyType === 'yearly') {
+        habitData.yearlyMonth = parseInt(document.getElementById('yearlyMonth').value);
+        habitData.yearlyDay = parseInt(document.getElementById('yearlyDay').value);
+    } else if (frequencyType === 'one-time') {
+        habitData.specificDate = document.getElementById('specificDate').value;
+    } else {
+        habitData.frequency = getSelectedFrequency();
+    }
+
+    // Set sharedCalendarId
+    const calendarId = document.getElementById('habitCalendar').value;
+    if (calendarId && calendarId !== 'personal') {
+        habitData.sharedCalendarId = calendarId;
+    } else {
+        habitData.sharedCalendarId = null;
+    }
+
+    try {
+        let response;
+        if (habitId) {
+            response = await api.updateHabit(habitId, habitData);
+        } else {
+            response = await api.createHabit(habitData);
+        }
+
+        if (response.success) {
+            closeHabitModal();
+            loadTodaysHabits();
+        }
+    } catch (error) {
+        console.error('Error saving habit:', error);
+        alert('Failed to save habit. Please try again.');
+    }
+}
+
+function getSelectedFrequency() {
+    const checkboxes = document.querySelectorAll('input[name="frequency"]:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
+}
+
+async function editHabit(habitId) {
+    try {
+        const response = await api.getHabit(habitId);
+
+        if (response.success) {
+            const habit = response.data;
+            const modal = document.getElementById('habitModal');
+            const form = document.getElementById('habitForm');
+
+            // Fill form
+            document.getElementById('habitTitle').value = habit.title;
+            document.getElementById('habitCategory').value = habit.category;
+            document.getElementById('habitReminder').value = habit.reminderTime;
+            document.getElementById('habitIcon').value = habit.icon;
+            document.getElementById('habitColor').value = habit.color;
+
+            // Set frequency type and related fields
+            const frequencyType = habit.frequencyType || 'weekly';
+            document.querySelectorAll('.frequency-type-option').forEach(opt => {
+                opt.classList.remove('selected');
+                opt.style.borderColor = 'transparent';
+                opt.style.background = 'var(--bg-cream)';
+                if (opt.dataset.type === frequencyType) {
+                    opt.classList.add('selected');
+                    opt.style.borderColor = 'var(--primary)';
+                    opt.style.background = 'rgba(74, 124, 89, 0.1)';
+                    opt.querySelector('input').checked = true;
+                }
+            });
+
+            const weeklyGroup = document.getElementById('weeklyFrequencyGroup');
+            const yearlyGroup = document.getElementById('yearlyFrequencyGroup');
+            const oneTimeGroup = document.getElementById('oneTimeFrequencyGroup');
+
+            if (frequencyType === 'yearly') {
+                weeklyGroup.style.display = 'none';
+                yearlyGroup.style.display = 'block';
+                oneTimeGroup.style.display = 'none';
+                document.getElementById('yearlyMonth').value = habit.yearlyMonth || 1;
+                // Populate days for selected month first
+                const daysInMonth = new Date(2024, habit.yearlyMonth || 1, 0).getDate();
+                const daySelect = document.getElementById('yearlyDay');
+                daySelect.innerHTML = '';
+                for (let i = 1; i <= daysInMonth; i++) {
+                    const opt = document.createElement('option');
+                    opt.value = i;
+                    opt.textContent = i;
+                    daySelect.appendChild(opt);
+                }
+                document.getElementById('yearlyDay').value = habit.yearlyDay || 1;
+            } else if (frequencyType === 'one-time') {
+                weeklyGroup.style.display = 'none';
+                yearlyGroup.style.display = 'none';
+                oneTimeGroup.style.display = 'block';
+                if (habit.specificDate) {
+                    document.getElementById('specificDate').value = habit.specificDate.split('T')[0];
+                }
+            } else {
+                weeklyGroup.style.display = 'block';
+                yearlyGroup.style.display = 'none';
+                oneTimeGroup.style.display = 'none';
+                // Set frequency checkboxes
+                document.querySelectorAll('input[name="frequency"]').forEach(cb => {
+                    cb.checked = (habit.frequency || []).includes(cb.value);
+                });
+            }
+
+            form.dataset.habitId = habitId;
+            document.getElementById('modalTitle').textContent = 'Edit Habit';
+            modal.classList.add('show');
+        }
+    } catch (error) {
+        console.error('Error loading habit:', error);
+        alert('Failed to load habit. Please try again.');
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Event Listeners
+// ═══════════════════════════════════════════════════════════════
+
+function setupEventListeners() {
+    // Create habit button
+    const createBtn = document.getElementById('createHabitBtn');
+    if (createBtn) {
+        createBtn.addEventListener('click', openCreateHabitModal);
+    }
+
+    // Modal close
+    const modalClose = document.querySelector('.modal-close');
+    if (modalClose) {
+        modalClose.addEventListener('click', closeHabitModal);
+    }
+
+    // Modal overlay click
+    const modalOverlay = document.getElementById('habitModal');
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) closeHabitModal();
+        });
+    }
+
+    // Habit form submit
+    const habitForm = document.getElementById('habitForm');
+    if (habitForm) {
+        habitForm.addEventListener('submit', saveHabit);
+    }
+
+    // Logout button
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => api.logout());
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Notifications
+// ═══════════════════════════════════════════════════════════════
+
+// Notification functions moved to notifications.js
+
+
+
+// ═══════════════════════════════════════════════════════════════
+// Grace Day Functions
+// ═══════════════════════════════════════════════════════════════
+
+async function loadGraceStatus() {
+    try {
+        const res = await api.getGraceStatus();
+        if (res.success) {
+            updateGraceDisplay(res.data);
+        }
+    } catch (error) {
+        console.error('Error loading grace status:', error);
+    }
+}
+
+function updateGraceDisplay(data) {
+    const dashboardIndicator = document.getElementById('dashboardGraceActive');
+    if (dashboardIndicator) {
+        // Show if personal grace day is active (or any shared one if we want to be broad, 
+        // but personal makes more sense for the main streak card)
+        if (data.personal && data.personal.activeToday) {
+            dashboardIndicator.classList.remove('hidden');
+        } else {
+            dashboardIndicator.classList.add('hidden');
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Utility Functions
+// ═══════════════════════════════════════════════════════════════
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function setupFrequencyToggleListeners() {
+    document.querySelectorAll('.frequency-type-option').forEach(option => {
+        option.addEventListener('click', () => {
+            // Update UI selection
+            document.querySelectorAll('.frequency-type-option').forEach(opt => {
+                opt.classList.remove('selected');
+                opt.style.borderColor = 'transparent';
+                opt.style.background = 'var(--bg-cream)';
+                opt.querySelector('input').checked = false;
+            });
+
+            option.classList.add('selected');
+            option.style.borderColor = 'var(--primary)';
+            option.style.background = 'rgba(74, 124, 89, 0.1)';
+            option.querySelector('input').checked = true;
+
+            // Show/hide relevant fields
+            const type = option.dataset.type;
+            const weeklyGroup = document.getElementById('weeklyFrequencyGroup');
+            const yearlyGroup = document.getElementById('yearlyFrequencyGroup');
+            const oneTimeGroup = document.getElementById('oneTimeFrequencyGroup');
+
+            weeklyGroup.style.display = 'none';
+            yearlyGroup.style.display = 'none';
+            oneTimeGroup.style.display = 'none';
+
+            if (type === 'weekly') {
+                weeklyGroup.style.display = 'block';
+            } else if (type === 'yearly') {
+                yearlyGroup.style.display = 'block';
+            } else if (type === 'one-time') {
+                oneTimeGroup.style.display = 'block';
+            }
+        });
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Utility Functions

@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="Streaklet - Build habits, track streaks, achieve goals. Your smart habit tracking companion.">
+  <title>Dashboard | Streaklet</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
+</head>
+
+<body>
+  <div class="app-layout">
+    <!-- Navigation -->
+    <nav class="navbar">
+      <div class="navbar-container">
+        <a href="index.html" class="navbar-brand">
+          <span class="logo-icon">🌿</span>
+          <span>Streaklet</span>
+        </a>
+
+        <div class="navbar-nav">
+          <a href="index.html" class="nav-link active">Dashboard</a>
+          <a href="calendar.html" class="nav-link">Calendar</a>
+          <a href="habits.html" class="nav-link">My Habits</a>
+          <a href="progress.html" class="nav-link">Progress</a>
+          <a href="about.html" class="nav-link">About</a>
+          <a href="settings.html" class="nav-link">Settings</a>
+        </div>
+
+        <div class="navbar-actions">
+          <!-- Notification Bell -->
+          <div class="notification-wrapper" id="notificationWrapper">
+            <button class="notification-bell" id="notificationBell" onclick="toggleNotificationPanel()"
+              title="Notifications">
+              <span class="bell-icon">🔔</span>
+              <span class="notification-badge hidden" id="notificationBadge">0</span>
+            </button>
+
+            <div class="notification-panel hidden" id="notificationPanel">
+              <div class="notification-header">
+                <h4>Notifications</h4>
+                <button class="btn-link" onclick="markAllAsRead()">Mark all read</button>
+              </div>
+              <div class="notification-list" id="notificationList"></div>
+            </div>
+          </div>
+
+          <div class="navbar-dropdown">
+            <button class="btn-menu" title="Menu" onclick="toggleMobileMenu()">
+              <span>•••</span>
+            </button>
+            <div class="dropdown-menu" id="navbarDropdownMenu">
+              <a href="settings.html" class="dropdown-item">
+                <span>⚙️</span> Settings
+              </a>
+              <button class="dropdown-item logout" onclick="api.logout()">
+                <span>🚪</span> Logout
+              </button>
+            </div>
+          </div>
+
+          <!-- Notification Bell -->
+          <div class="notification-wrapper" id="notificationWrapper">
+            <button class="notification-bell" id="notificationBell" onclick="toggleNotificationPanel()"
+              title="Notifications">
+              <span class="bell-icon">🔔</span>
+              <span class="notification-badge hidden" id="notificationBadge">0</span>
+            </button>
+
+            <!-- Notification Dropdown -->
+            <div class="notification-panel hidden" id="notificationPanel">
+              <div class="notification-header">
+                <h4>Notifications</h4>
+                <button class="btn-link" onclick="markAllAsRead()">Mark all read</button>
+              </div>
+              <div class="notification-list" id="notificationList">
+                <div class="notification-empty">
+                  <span>🔔</span>
+                  <p>No notifications yet</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="user-avatar">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=streaklet" alt="User avatar">
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="container">
+        <!-- Greeting -->
+        <div class="page-greeting">
+          <h1 id="greeting">Good evening 👋</h1>
+          <p>Let's build your habits.</p>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+          <!-- Main Column -->
+          <div class="dashboard-main">
+            <!-- Today's Habits Card -->
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">Today's Habits</h2>
+                <button class="btn btn-primary" id="createHabitBtn">
+                  + Add Habit
+                </button>
+              </div>
+              <div class="habits-list" id="habitsList">
+                <!-- Habits will be loaded here -->
+                <div class="flex-center" style="padding: 40px;">
+                  <div class="loading-spinner"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Progress Section -->
+            <div class="progress-grid">
+              <!-- Today's Progress -->
+              <div class="card">
+                <h3 class="section-title">Today's Progress</h3>
+                <div class="progress-ring-container">
+                  <div class="progress-ring">
+                    <svg width="160" height="160" id="progressRing">
+                      <circle class="progress-ring-bg" cx="80" cy="80" r="70" />
+                      <circle class="progress-ring-fill" cx="80" cy="80" r="70" stroke-dasharray="439.82"
+                        stroke-dashoffset="439.82" />
+                    </svg>
+                    <div class="progress-ring-text">
+                      <span class="progress-percentage" id="progressPercentage">0%</span>
+                      <span class="progress-label">Completed</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Weekly Overview -->
+              <div class="card">
+                <h3 class="section-title">Weekly Overview</h3>
+                <div class="weekly-chart" id="weeklyChart">
+                  <div class="chart-bars">
+                    <div class="chart-bar">
+                      <div class="bar-fill" style="height: 8px;"></div>
+                      <span class="bar-label">S</span>
+                      <span class="bar-check"></span>
+                    </div>
+                    <div class="chart-bar">
+                      <div class="bar-fill" style="height: 8px;"></div>
+                      <span class="bar-label">M</span>
+                      <span class="bar-check"></span>
+                    </div>
+                    <div class="chart-bar">
+                      <div class="bar-fill" style="height: 8px;"></div>
+                      <span class="bar-label">T</span>
+                      <span class="bar-check"></span>
+                    </div>
+                    <div class="chart-bar">
+                      <div class="bar-fill" style="height: 8px;"></div>
+                      <span class="bar-label">W</span>
+                      <span class="bar-check"></span>
+                    </div>
+                    <div class="chart-bar">
+                      <div class="bar-fill" style="height: 8px;"></div>
+                      <span class="bar-label">T</span>
+                      <span class="bar-check"></span>
+                    </div>
+                    <div class="chart-bar">
+                      <div class="bar-fill" style="height: 8px;"></div>
+                      <span class="bar-label">F</span>
+                      <span class="bar-check"></span>
+                    </div>
+                    <div class="chart-bar">
+                      <div class="bar-fill" style="height: 8px;"></div>
+                      <span class="bar-label">S</span>
+                      <span class="bar-check"></span>
+                    </div>
+                  </div>
+                </div>
+                <div class="chart-footer" id="perfectDays">
+                  <strong>0</strong> Perfect Days this week!
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sidebar -->
+          <div class="dashboard-sidebar">
+            <!-- Streaks Card -->
+            <div class="streaks-card">
+              <h3 class="section-title">Your Streaks</h3>
+
+              <div class="streak-stat" id="currentStreak">
+                <span class="streak-icon">🔥</span>
+                <div class="streak-info">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <h3>0 Days</h3>
+                    <div id="dashboardGraceActive" class="hidden"
+                      style="background: var(--accent-orange); color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.65rem; font-weight: 700;">
+                      🛡️ PROTECTED
+                    </div>
+                  </div>
+                  <p>Current Streak <span class="streak-badge">Keep it up!</span></p>
+                  <p class="streak-habit" id="currentStreakHabit"
+                    style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; font-style: italic;"></p>
+                </div>
+              </div>
+
+              <div class="streak-stat" id="longestStreak">
+                <span class="streak-icon">🏆</span>
+                <div class="streak-info">
+                  <h3>0 Days</h3>
+                  <p>Longest Streak ⭐</p>
+                  <p class="streak-habit" id="longestStreakHabit"
+                    style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; font-style: italic;"></p>
+                </div>
+              </div>
+
+              <!-- Missed Habits Alert -->
+              <div class="missed-alert hidden" id="missedAlert">
+                <div class="missed-info">
+                  <span class="missed-count">0</span>
+                  <div class="missed-text">
+                    <strong>Missed Habits</strong>
+                    <span>0 tasks missed today</span>
+                  </div>
+                </div>
+                <button class="btn-review">Review ›</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Create/Edit Habit Modal -->
+  <div class="modal-overlay" id="habitModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalTitle">Create New Habit</h2>
+        <button class="modal-close" onclick="closeHabitModal()">✕</button>
+      </div>
+
+      <form id="habitForm">
+        <div class="form-group">
+          <label class="form-label" for="habitTitle">Habit Name</label>
+          <input type="text" id="habitTitle" class="form-input" placeholder="e.g., Morning Workout" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="habitCategory">Category</label>
+          <select id="habitCategory" class="form-input form-select">
+            <option value="Health">Health</option>
+            <option value="Learning">Learning</option>
+            <option value="Mindfulness">Mindfulness</option>
+            <option value="Wellness">Wellness</option>
+            <option value="Productivity">Productivity</option>
+            <option value="Social">Social</option>
+            <option value="Finance">Finance</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="habitCalendar">Calendar</label>
+          <select id="habitCalendar" class="form-input form-select">
+            <option value="personal">👤 My Calendar (Personal)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Frequency Type</label>
+          <div class="flex gap-sm" style="margin-bottom: 12px;">
+            <label
+              style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--bg-cream); border-radius: 10px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;"
+              class="frequency-type-option selected" data-type="weekly">
+              <input type="radio" name="frequencyType" value="weekly" checked style="display: none;">
+              <span style="font-size: 1.1rem;">📅</span>
+              <span>Weekly</span>
+            </label>
+            <label
+              style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--bg-cream); border-radius: 10px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;"
+              class="frequency-type-option" data-type="yearly">
+              <input type="radio" name="frequencyType" value="yearly" style="display: none;">
+              <span style="font-size: 1.1rem;">🎂</span>
+              <span>Yearly</span>
+            </label>
+            <label
+              style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--bg-cream); border-radius: 10px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;"
+              class="frequency-type-option" data-type="one-time">
+              <input type="radio" name="frequencyType" value="one-time" style="display: none;">
+              <span style="font-size: 1.1rem;">🗓️</span>
+              <span>One-Time</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Weekly Days Selection -->
+        <div class="form-group" id="weeklyFrequencyGroup">
+          <label class="form-label">Days of the Week</label>
+          <div class="flex gap-sm" style="flex-wrap: wrap;">
+            <label
+              style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--bg-cream); border-radius: 20px; cursor: pointer;">
+              <input type="checkbox" name="frequency" value="Sun" checked> Sun
+            </label>
+            <label
+              style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--bg-cream); border-radius: 20px; cursor: pointer;">
+              <input type="checkbox" name="frequency" value="Mon" checked> Mon
+            </label>
+            <label
+              style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--bg-cream); border-radius: 20px; cursor: pointer;">
+              <input type="checkbox" name="frequency" value="Tue" checked> Tue
+            </label>
+            <label
+              style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--bg-cream); border-radius: 20px; cursor: pointer;">
+              <input type="checkbox" name="frequency" value="Wed" checked> Wed
+            </label>
+            <label
+              style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--bg-cream); border-radius: 20px; cursor: pointer;">
+              <input type="checkbox" name="frequency" value="Thu" checked> Thu
+            </label>
+            <label
+              style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--bg-cream); border-radius: 20px; cursor: pointer;">
+              <input type="checkbox" name="frequency" value="Fri" checked> Fri
+            </label>
+            <label
+              style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--bg-cream); border-radius: 20px; cursor: pointer;">
+              <input type="checkbox" name="frequency" value="Sat" checked> Sat
+            </label>
+          </div>
+        </div>
+
+        <!-- Yearly Date Selection -->
+        <div class="form-group" id="yearlyFrequencyGroup" style="display: none;">
+          <label class="form-label">Date (Month & Day)</label>
+          <div class="flex gap-sm">
+            <select id="yearlyMonth" class="form-input form-select" style="flex: 1;">
+              <option value="1">January</option>
+              <option value="2">February</option>
+              <option value="3">March</option>
+              <option value="4">April</option>
+              <option value="5">May</option>
+              <option value="6">June</option>
+              <option value="7">July</option>
+              <option value="8">August</option>
+              <option value="9">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+            <select id="yearlyDay" class="form-input form-select" style="flex: 1;">
+            </select>
+          </div>
+        </div>
+
+        <!-- One-Time Date Selection -->
+        <div class="form-group" id="oneTimeFrequencyGroup" style="display: none;">
+          <label class="form-label">Specific Date</label>
+          <input type="date" id="specificDate" class="form-input">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="habitReminder">Reminder Time</label>
+          <input type="time" id="habitReminder" class="form-input" value="09:00">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="habitIcon">Icon</label>
+          <select id="habitIcon" class="form-input form-select">
+            <option value="🎯">🎯 Target</option>
+            <option value="💪">💪 Workout</option>
+            <option value="📚">📚 Reading</option>
+            <option value="🧘">🧘 Meditation</option>
+            <option value="💧">💧 Water</option>
+            <option value="🏃">🏃 Running</option>
+            <option value="✍️">✍️ Writing</option>
+            <option value="🎨">🎨 Creative</option>
+            <option value="💰">💰 Finance</option>
+            <option value="🌱">🌱 Growth</option>
+            <option value="😴">😴 Sleep</option>
+            <option value="🍎">🍎 Nutrition</option>
+            <option value="👨‍👩‍👧‍👦">👨‍👩‍👧‍👦 Going Out</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Color</label>
+          <div class="color-grid">
+            <input type="radio" name="habitColorRadio" value="#4A7C59" id="color1" checked style="display:none;">
+            <label for="color1" class="color-option selected" style="background: #4A7C59;"></label>
+
+            <input type="radio" name="habitColorRadio" value="#4A90A4" id="color2" style="display:none;">
+            <label for="color2" class="color-option" style="background: #4A90A4;"></label>
+
+            <input type="radio" name="habitColorRadio" value="#E07B39" id="color3" style="display:none;">
+            <label for="color3" class="color-option" style="background: #E07B39;"></label>
+
+            <input type="radio" name="habitColorRadio" value="#D94B3D" id="color4" style="display:none;">
+            <label for="color4" class="color-option" style="background: #D94B3D;"></label>
+
+            <input type="radio" name="habitColorRadio" value="#9B59B6" id="color5" style="display:none;">
+            <label for="color5" class="color-option" style="background: #9B59B6;"></label>
+
+            <input type="radio" name="habitColorRadio" value="#F5B74A" id="color6" style="display:none;">
+            <label for="color6" class="color-option" style="background: #F5B74A;"></label>
+          </div>
+          <input type="hidden" id="habitColor" value="#4A7C59">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeHabitModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Habit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/api.js?v=1"></script>
+  <script src="js/notifications.js?v=1"></script>
+  <script src="js/dashboard.js?v=1"></script>
+  <script>
+    // Color picker logic
+    document.querySelectorAll('.color-option').forEach(option => {
+      option.addEventListener('click', () => {
+        document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+        option.classList.add('selected');
+        document.getElementById('habitColor').value = option.previousElementSibling.value;
+      });
+    });
+
+    // Frequency type toggle logic
+    document.querySelectorAll('.frequency-type-option').forEach(option => {
+      option.addEventListener('click', () => {
+        document.querySelectorAll('.frequency-type-option').forEach(o => {
+          o.classList.remove('selected');
+          o.style.borderColor = 'transparent';
+          o.style.background = 'var(--bg-cream)';
+        });
+        option.classList.add('selected');
+        option.style.borderColor = 'var(--primary)';
+        option.style.background = 'rgba(74, 124, 89, 0.1)';
+        option.querySelector('input').checked = true;
+
+        const type = option.dataset.type;
+        const weeklyGroup = document.getElementById('weeklyFrequencyGroup');
+        const yearlyGroup = document.getElementById('yearlyFrequencyGroup');
+
+        if (type === 'weekly') {
+          weeklyGroup.style.display = 'block';
+          yearlyGroup.style.display = 'none';
+        } else {
+          weeklyGroup.style.display = 'none';
+          yearlyGroup.style.display = 'block';
+        }
+      });
+    });
+
+    // Initialize selected state styling
+    document.querySelector('.frequency-type-option.selected').style.borderColor = 'var(--primary)';
+    document.querySelector('.frequency-type-option.selected').style.background = 'rgba(74, 124, 89, 0.1)';
+
+    // Populate day options based on month
+    function populateDays(month) {
+      const daySelect = document.getElementById('yearlyDay');
+      const daysInMonth = new Date(2024, month, 0).getDate(); // Using leap year for Feb
+      daySelect.innerHTML = '';
+      for (let i = 1; i <= daysInMonth; i++) {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = i;
+        daySelect.appendChild(opt);
+      }
+    }
+
+    // Initial population
+    populateDays(1);
+
+    // Update days when month changes
+    document.getElementById('yearlyMonth').addEventListener('change', (e) => {
+      populateDays(parseInt(e.target.value));
+    });
+  </script>
+  <script src="js/notifications.js?v=7"></script>
+</body>
+
+</html>
